@@ -2,6 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageTags>dapper crud extensions</PackageTags>
+    <Authors>musictopia</Authors>
+    <Description>Dapper extensions and connection class.
+Allows advanced searching and sorting and crud functions.
+Maps to tables and columns via attributes.
+Even has many ways to be smart about updating.  Even allows multiple tables include one to many joins with up to 3 tables.</Description>
   </PropertyGroup>
 
   <ItemGroup>
