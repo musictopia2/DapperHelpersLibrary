@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="1.60.1" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.110" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="CommonBasicStandardLibraries">
+      <HintPath>..\CommonBasicStandardLibraries\CommonBasicStandardLibraries\bin\Release\netstandard2.0\CommonBasicStandardLibraries.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
