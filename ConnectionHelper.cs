@@ -435,7 +435,7 @@ namespace DapperHelpersLibrary
             {
                 await SQLList.ForEachAsync(async Items =>
                 {
-                    await cons.ExecuteAsync(Items, trans);
+                    await cons.ExecuteAsync(Items, null, trans);
                 });
                 trans.Commit();
             }, isolationLevel);
