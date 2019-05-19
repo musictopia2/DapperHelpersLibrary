@@ -18,7 +18,7 @@ using System;
 using static DapperHelpersLibrary.Extensions.GetSimple;
 using static DapperHelpersLibrary.SQLHelpers.StatementSelectFactoryJoin;
 using DapperHelpersLibrary.SQLHelpers;
-
+using CommonBasicStandardLibraries.Exceptions;
 namespace DapperHelpersLibrary.Extensions
 {
     public static class GetConditionalJoinedTables
@@ -76,6 +76,7 @@ namespace DapperHelpersLibrary.Extensions
             ThisData.SQLStatement = sqls;
             PopulateSimple(ParameterMappings, ThisData, EnumCategory.Conditional);
             Dictionary<int, E> ThisDict = new Dictionary<int, E>();
+            //throw new BasicBlankException(sqls);
             return db.Query<E, D1, E>(sqls, (Main, Detail) => PrivateGetOneToMany(Main, Detail, action, ThisDict), ThisData.Parameters, ThisTran, commandTimeout: ConnectionTimeOut).Distinct();
         } //if you need transaction, will think about that as well
 

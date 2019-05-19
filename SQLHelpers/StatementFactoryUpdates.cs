@@ -104,7 +104,8 @@ namespace DapperHelpersLibrary.SQLHelpers
         {
             if (UpdateList.Count == 0)
                 return new CustomBasicList<DatabaseMapping>();
-            CustomBasicList<DatabaseMapping> MapList = GetMappingList<E>(out string _);
+            //CustomBasicList<DatabaseMapping> MapList = GetMappingList<E>(out string _);
+            CustomBasicList<DatabaseMapping> MapList = GetMappingList(ThisEntity, out string _);
             CustomBasicList<DatabaseMapping> NewList = new CustomBasicList<DatabaseMapping>();
             UpdateList.ForEach(Items =>
             {

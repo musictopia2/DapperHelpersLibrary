@@ -326,8 +326,9 @@ namespace DapperHelpersLibrary.SQLHelpers
                     ThisMap.Value = RealValue;
                     //cats.AddToString($"{ThisMap.DatabaseName} {Items.Operator} {RealValue}", Seperator);
                     ThisMap.ObjectName = ThisDict.GetNewValue(ThisMap.DatabaseName);
+
                     if (Items.Property!= "ID")
-                        cats.AddToString($"{ThisMap.DatabaseName} {Items.Operator} @{ThisMap.ObjectName}", Seperator);
+                        cats.AddToString($"{Items.Code}{ThisMap.DatabaseName} {Items.Operator} @{ThisMap.ObjectName}", Seperator);
                     else
                         cats.AddToString($"{ThisMap.Prefix}.{ThisMap.DatabaseName} {Items.Operator} @{ThisMap.ObjectName}", Seperator);
                     //if (Items.Operator == cs.Like)

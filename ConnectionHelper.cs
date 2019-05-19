@@ -21,6 +21,8 @@ using DapperHelpersLibrary.Extensions;
 using static DapperHelpersLibrary.SQLHelpers.StatementFactoryUpdates;
 using DapperHelpersLibrary.SQLHelpers;
 using static DapperHelpersLibrary.SQLHelpers.SortInfo;
+using cs = DapperHelpersLibrary.ConditionClasses.ConditionOperators;
+
 namespace DapperHelpersLibrary
 {
     public class ConnectionHelper
@@ -43,6 +45,18 @@ namespace DapperHelpersLibrary
             AndCondition ThisCon = new AndCondition();
             ThisCon.Property = Property;
             ThisCon.Value = Value;
+            ThisList.Add(ThisCon);
+            return ThisList;
+        }
+        public static CustomBasicList<ICondition> StartWithNullCondition(string Property, string Operator )
+        {
+            CustomBasicList<ICondition> ThisList = new CustomBasicList<ICondition>();
+            AndCondition ThisCon = new AndCondition();
+            ThisCon.Property = Property;
+            if (Operator != cs.IsNotNull && Operator != cs.IsNull)
+                throw new BasicBlankException("Only null or is not null is allowed when starting with null conditions");
+            //this was needed for the tv shows.
+            ThisCon.Operator = Operator;
             ThisList.Add(ThisCon);
             return ThisList;
         }

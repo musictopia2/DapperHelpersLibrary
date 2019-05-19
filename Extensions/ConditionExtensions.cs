@@ -46,6 +46,12 @@ namespace DapperHelpersLibrary.Extensions
             TempList.Add(ThisCon);
             return TempList;
         }
+        public static CustomBasicList<ICondition> JoinedCondition(this CustomBasicList<ICondition> TempList, string TableCode)
+        {
+            AndCondition ThisCon = (AndCondition)TempList.Last();
+            ThisCon.Code = TableCode;
+            return TempList;
+        }
 
         public static CustomBasicList<ICondition> AppendContains(this CustomBasicList<ICondition> TempList, CustomBasicList<int> ContainList)
         {
