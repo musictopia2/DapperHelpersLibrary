@@ -25,23 +25,11 @@ namespace DapperHelpersLibrary.Extensions
         //decided to return ienumerable.
         //if i leave as custombasiclist,
         //then what will happen is for the conditional songs, other things will be added automatically.
-
-
-
-
         public static CustomBasicList<E> Get<E>(this IDbConnection db, CustomBasicList<ICondition> Conditions, CustomBasicList<SortInfo> SortList = null, int HowMany = 0, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class
         {
             return db.PrivateSimpleSelectConditional<E>(Conditions, SortList, HowMany, ThisTran, ConnectionTimeOut).ToCustomBasicList();
         }
-        //public static CustomBasicList<I> Get<I, E>(this IDbConnection db, CustomBasicList<ICondition> Conditions, CustomBasicList<SortInfo> SortList = null, int HowMany = 0, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, I
-        //{
-        //    var ThisList = db.PrivateSimpleSelectConditional<E>(Conditions, SortList, HowMany, ThisTran, ConnectionTimeOut);
-        //    return ThisList.ToCastedList<I>();
-        //}
-
-
-
-
+        
         public async static Task<CustomBasicList<E>> GetAsync<E>(this IDbConnection db, CustomBasicList<ICondition> Conditions, CustomBasicList<SortInfo> SortList = null, int HowMany = 0, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class
         {
             var Temps = await db.PrivateSimpleSelectConditionalAsync<E>(Conditions, SortList, HowMany, ThisTran, ConnectionTimeOut);

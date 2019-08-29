@@ -74,6 +74,15 @@ namespace DapperHelpersLibrary.Extensions
             PopulateSimple(UpdateList, ThisData, EnumCategory.UseDatabaseMapping);
             await db.ExecuteAsync(sqls, ThisData.Parameters, ThisTran, ConnectionTimeOut);
         }
+        public static void Update<E>(this IDbConnection db, int ID, CustomBasicList<UpdateEntity> UpdateList, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, ISimpleDapperEntity
+        {
+            var (sqls, ParameterMappings) = GetUpdateStatement<E>(UpdateList);
+            DapperSQLData ThisData = new DapperSQLData();
+            ThisData.SQLStatement = sqls;
+            ThisData.Parameters.Add("ID", ID);
+            PopulateSimple(ParameterMappings, ThisData, EnumCategory.UseDatabaseMapping);
+            db.Execute(sqls, ThisData.Parameters, ThisTran, ConnectionTimeOut);
+        }
         public static async Task UpdateAsync<E>(this IDbConnection db, int ID, CustomBasicList<UpdateEntity> UpdateList, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, ISimpleDapperEntity
         {
             var (sqls, ParameterMappings) = GetUpdateStatement<E>(UpdateList);

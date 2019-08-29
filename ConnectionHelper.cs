@@ -519,7 +519,7 @@ namespace DapperHelpersLibrary
         {
             using (IDbConnection cons = GetConnection())
             {
-                return Get<E>(SortList, HowMany);
+                return cons.Get<E>(SortList, HowMany);
             }
         }
 
