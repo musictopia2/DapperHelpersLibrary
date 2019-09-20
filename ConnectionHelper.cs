@@ -148,6 +148,7 @@ namespace DapperHelpersLibrary
                 IDbConnection output = new SQLiteConnection(ConnectionString);
                 if (IsTesting == true)
                     output.Open(); //for testing, has to open connection.
+                output.Dispose(); //i think.
                 return new SQLiteConnection(ConnectionString);
             }
             else if (Category == EnumDatabaseCategory.SQLServer)
@@ -349,7 +350,15 @@ namespace DapperHelpersLibrary
             }, UpdateList, isolationLevel);
 
         }
+        public void UpdateCommonListOnly<E>(CustomBasicList<E> UpdateList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
+        {
+            DoBulkWork((cons, tran, ThisEntity) =>
+            {
+                cons.UpdateEntity(ThisEntity, EnumUpdateCategory.Common, ThisTran: tran);
+                tran.Commit(); //i think i forgot this.
+            }, UpdateList, isolationLevel);
 
+        }
         public async Task UpdateCommonOnlyAsync<E>(E ThisEntity) where E : class, ISimpleDapperEntity
         {
             using (IDbConnection cons = GetConnection())
@@ -402,7 +411,13 @@ namespace DapperHelpersLibrary
                 ThisEntity.ID = await cons.InsertSingleAsync(ThisEntity); //i think if doing it this way, let this give the id.
             }
         }
-
+        public void AddEntity<E>(E thisEntity) where E: class, ISimpleDapperEntity
+        {
+            using (IDbConnection cons = GetConnection())
+            {
+                thisEntity.ID = cons.InsertSingle(thisEntity); //i think if doing it this way, let this give the id.
+            }
+        }
         public void DeleteOnly<E>(E ThisEntity) where E: class, ISimpleDapperEntity
         {
             using (IDbConnection cons = GetConnection())
