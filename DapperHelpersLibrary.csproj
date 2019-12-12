@@ -1,19 +1,24 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
+	<LangVersion>8.0</LangVersion>
+	<Nullable>enable</Nullable>
     <PackageTags>dapper crud extensions</PackageTags>
     <Authors>musictopia</Authors>
     <Description>Dapper extensions and connection class.
 Allows advanced searching and sorting and crud functions.
 Maps to tables and columns via attributes.
 Even has many ways to be smart about updating.  Even allows multiple tables include one to many joins with up to 3 tables.</Description>
-    <Version>1.0.9</Version>
+    <Version>2.0.00</Version><!--could have breaking changes now.  since this uses 2.1, will never work on old fashioned .net framework again.  -->
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CommonBasicStandardLibraries" Version="1.0.80" />
-    <PackageReference Include="Dapper" Version="2.0.4" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.6.1" />
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.111" />
+	<!-- decided to risk some other things including the brand new sqlclient that is talked about as well. -->
+    <PackageReference Include="Dapper" Version="2.0.30" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="CommonBasicStandardLibraries">
+      <HintPath>..\CommonBasicStandardLibraries\bin\Release\netstandard2.1\CommonBasicStandardLibraries.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

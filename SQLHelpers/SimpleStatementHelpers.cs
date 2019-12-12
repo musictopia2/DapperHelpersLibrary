@@ -1,33 +1,15 @@
-﻿using System;
-using System.Text;
-using CommonBasicStandardLibraries.Exceptions;
-using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
-using System.Linq;
-using CommonBasicStandardLibraries.BasicDataSettingsAndProcesses;
-using static CommonBasicStandardLibraries.BasicDataSettingsAndProcesses.BasicDataFunctions;
+﻿using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.Misc;
 using CommonBasicStandardLibraries.CollectionClasses;
-using System.Threading.Tasks; //most of the time, i will be using asyncs.
-using fs = CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.JsonSerializers.FileHelpers;
-using js = CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.JsonSerializers.NewtonJsonStrings; //just in case i need those 2.
+using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
+using CommonBasicStandardLibraries.Exceptions;
 using DapperHelpersLibrary.MapHelpers;
-using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.Misc;
+using System.Linq;
+using System.Text;
 using static DapperHelpersLibrary.MapHelpers.MapBaseHelperClass;
-
-
-//i think this is the most common things i like to do
 namespace DapperHelpersLibrary.SQLHelpers
 {
-    //this is for simple parts.  will probably have a more complex one to focus on complex statements
-    //one part for the statements and one part for the dynamic parameters (probably another namespace)
-
     internal class SimpleStatementHelpers
     {
-        public enum EnumDatabaseCategory
-        {
-            None,
-            SQLServer,
-            SQLite
-        }
         public enum EnumSQLCategory
         {
             Normal,
@@ -35,132 +17,130 @@ namespace DapperHelpersLibrary.SQLHelpers
             Bool,
             Delete
         }
-        public static string GetInsertStatement(EnumDatabaseCategory Category, CustomBasicList<DatabaseMapping> ThisList, string TableName, bool IsAutoIncremented)
+        public static string GetInsertStatement(EnumDatabaseCategory category, CustomBasicList<DatabaseMapping> thisList, string tableName, bool isAutoIncremented)
         {
-            if (Category == EnumDatabaseCategory.None)
+            if (category == EnumDatabaseCategory.None)
                 throw new BasicBlankException("Must choose what database to use");
-            StringBuilder ThisStr = new StringBuilder("insert into ");
-            ThisStr.Append(TableName);
-            ThisStr.Append(" (");
+            StringBuilder thisStr = new StringBuilder("insert into ");
+            thisStr.Append(tableName);
+            thisStr.Append(" (");
             StrCat cat1 = new StrCat();
             StrCat cat2 = new StrCat();
-            ThisList.ForEach(Items =>
+            thisList.ForEach(Items =>
             {
                 cat1.AddToString(Items.DatabaseName, ", ");
                 cat2.AddToString($"@{Items.DatabaseName}", ", ");
             });
-            ThisStr.Append(cat1.GetInfo());
-            ThisStr.Append(") values (");
-            ThisStr.Append(cat2.GetInfo());
-            ThisStr.Append(")");
-            if (IsAutoIncremented == true)
+            thisStr.Append(cat1.GetInfo());
+            thisStr.Append(") values (");
+            thisStr.Append(cat2.GetInfo());
+            thisStr.Append(")");
+            if (isAutoIncremented == true)
             {
-                if (Category == EnumDatabaseCategory.SQLite)
-                    ThisStr.Append("; SELECT last_insert_rowid()"); //hopefully this works with sql server. if not, rethink
-                else if (Category == EnumDatabaseCategory.SQLServer)
-                    ThisStr.Append("; SELECT CAST(SCOPE_IDENTITY()  AS BIGINT) AS [id]");
+                if (category == EnumDatabaseCategory.SQLite)
+                    thisStr.Append("; SELECT last_insert_rowid()"); //hopefully this works with sql server. if not, rethink
+                else if (category == EnumDatabaseCategory.SQLServer)
+                    thisStr.Append("; SELECT CAST(SCOPE_IDENTITY()  AS BIGINT) AS [id]");
                 else
                     throw new BasicBlankException("Not Supported");
             }
-            //here is the sql server statement
-            //SELECT CAST(SCOPE_IDENTITY()  AS BIGINT) AS [id]
-            //i can't just set the variable because if 2 databases are being used, will cause problems.
-            //its possible to have processes that use both sql server and sqlite.
-            return ThisStr.ToString();
+            return thisStr.ToString();
         }
-        public static string GetLimitSQLite(EnumDatabaseCategory Database, int HowMany)
+        public static string GetLimitSQLite(EnumDatabaseCategory database, int howMany)
         {
-            if (Database == EnumDatabaseCategory.SQLServer)
+            if (database == EnumDatabaseCategory.SQLServer)
                 return "";
-            if (HowMany <= 0)
+            if (howMany <= 0)
                 return "";
-            return $"Limit {HowMany}";
+            return $"Limit {howMany}";
         }
-
-        public static string GetSortStatement(CustomBasicList<DatabaseMapping> MapList, CustomBasicList<SortInfo> SortList, bool IsJoined)
+        public static string GetSortStatement(CustomBasicList<DatabaseMapping> mapList, CustomBasicList<SortInfo>? sortList, bool isJoined)
         {
-            if (SortList == null)
+            if (sortList == null)
                 return ""; //nothing
-            if (SortList.Count == 0)
+            if (sortList.Count == 0)
                 throw new BasicBlankException("If you are not sending nothing. you must have at least one condition");
-            StringBuilder ThisStr = new StringBuilder();
-            ThisStr.Append(" order by ");
-            string Extras;
+            StringBuilder thisStr = new StringBuilder();
+            thisStr.Append(" order by ");
+            string extras;
             StrCat cats = new StrCat();
-            SortList.ForEach(Items =>
+            sortList.ForEach(items =>
             {
-                DatabaseMapping ThisMap = FindMappingForProperty(Items, MapList);
-                if (Items.OrderBy == SortInfo.EnumOrderBy.Descending)
-                    Extras = " desc";
+                DatabaseMapping thisMap = FindMappingForProperty(items, mapList);
+                if (items.OrderBy == SortInfo.EnumOrderBy.Descending)
+                    extras = " desc";
                 else
-                    Extras = "";
-                if (IsJoined == false)
-                    cats.AddToString($"{ThisMap.DatabaseName}{Extras}", ", ");
+                    extras = "";
+                if (isJoined == false)
+                    cats.AddToString($"{thisMap.DatabaseName}{extras}", ", ");
                 else
-                    cats.AddToString($"{ThisMap.Prefix}.{ThisMap.DatabaseName}{Extras}", ", ");
+                    cats.AddToString($"{thisMap.Prefix}.{thisMap.DatabaseName}{extras}", ", ");
             });
-            ThisStr.Append(cats.GetInfo());
-            return ThisStr.ToString();
+            thisStr.Append(cats.GetInfo());
+            return thisStr.ToString();
         }
-
-        public static string GetDeleteStatement(string TableName)
+        public static string GetDeleteStatement(string tableName)
         {
-            StringBuilder ThisStr = new StringBuilder("delete from ");
-            ThisStr.Append(TableName);
-            return ThisStr.ToString();
+            StringBuilder thisStr = new StringBuilder("delete from ");
+            thisStr.Append(tableName);
+            return thisStr.ToString();
         }
-        public static (string sqls, CustomBasicList<DatabaseMapping> MapList) GetSimpleSelectStatement<E>(EnumDatabaseCategory Database, int HowMany = 0) where E : class
+        public static (string sqls, CustomBasicList<DatabaseMapping> MapList) GetSimpleSelectStatement<E>(EnumDatabaseCategory database, int howMany = 0) where E : class
         {
-            
-            CustomBasicList<DatabaseMapping> ThisList = GetMappingList<E>(out string TableName);
-            string ThisStr = GetSimpleSelectStatement(ThisList, TableName, Database, HowMany: HowMany);
-            return (ThisStr, ThisList);
-            //return GetSimpleSelectStatement(ThisList, TableName);
-            
+            CustomBasicList<DatabaseMapping> thisList = GetMappingList<E>(out string TableName);
+            string thisStr = GetSimpleSelectStatement(thisList, TableName, database, howMany: howMany);
+            return (thisStr, thisList);
         }
-        public static string GetSimpleSelectStatement(CustomBasicList<DatabaseMapping> ThisList, string TableName, EnumDatabaseCategory Database, EnumSQLCategory Category = EnumSQLCategory.Normal, int HowMany = 0, string Property = "")
+        public static string GetSimpleSelectStatement(CustomBasicList<DatabaseMapping> thisList, string tableName, EnumDatabaseCategory database, EnumSQLCategory category = EnumSQLCategory.Normal, int howMany = 0, string property = "")
         {
-            StringBuilder ThisStr = new StringBuilder("select ");
-            if (HowMany > 0 && Database == EnumDatabaseCategory.SQLServer) //sqlite requires it at the end.
-                ThisStr.Append($"top {HowMany} ");
-            if (Category == EnumSQLCategory.Normal && Property == "")
+            StringBuilder thisStr = new StringBuilder("select ");
+            if (howMany > 0 && database == EnumDatabaseCategory.SQLServer) //sqlite requires it at the end.
+                thisStr.Append($"top {howMany} ");
+            if (category == EnumSQLCategory.Normal && property == "")
             {
-                if (ThisList.TrueForAll(Items => Items.HasMatch == true))
+                if (thisList.TrueForAll(Items => Items.HasMatch == true))
                 {
-                    ThisStr.Append(" * from ");
-                    ThisStr.Append(TableName);
-                    return ThisStr.ToString();
+                    thisStr.Append(" * from ");
+                    thisStr.Append(tableName);
+                    return thisStr.ToString();
                 }
                 StrCat cats = new StrCat();
-                ThisList.ForEach(Items =>
+                thisList.ForEach(Items =>
                 {
                     if (Items.HasMatch == false)
                         cats.AddToString($"{Items.DatabaseName} as {Items.ObjectName}", ", ");
                     else
                         cats.AddToString(Items.DatabaseName, ", ");
                 });
-                ThisStr.Append(cats.GetInfo());
+                thisStr.Append(cats.GetInfo());
             }
-            else if (Category == EnumSQLCategory.Normal)
+            else if (category == EnumSQLCategory.Normal)
             {
-                DatabaseMapping ThisMap = ThisList.Where(Items => Items.ObjectName == Property).Single();
-                if (ThisMap.HasMatch == false)
-                    ThisStr.Append($"{ThisMap.DatabaseName} as {ThisMap.ObjectName} ");
+                DatabaseMapping thisMap = thisList.Where(Items => Items.ObjectName == property).Single();
+                if (thisMap.HasMatch == false)
+                    thisStr.Append($"{thisMap.DatabaseName} as {thisMap.ObjectName} ");
                 else
-                    ThisStr.Append($"{ThisMap.DatabaseName} ");
+                    thisStr.Append($"{thisMap.DatabaseName} ");
             }
-            else if (Category == EnumSQLCategory.Count)
-                ThisStr.Append("count (*)");
-            else if (Category == EnumSQLCategory.Bool)
-                ThisStr.Append("1");
-            else if (Category == EnumSQLCategory.Delete)
+            else if (category == EnumSQLCategory.Count)
+            {
+                thisStr.Append("count (*)");
+            }
+            else if (category == EnumSQLCategory.Bool)
+            {
+                thisStr.Append("1");
+            }
+            else if (category == EnumSQLCategory.Delete)
+            {
                 throw new BasicBlankException("Deleting is not supposed to get a select statement.  Try delete statement instead");
+            }
             else
+            {
                 throw new BasicBlankException("Not supported");
-            ThisStr.Append(" from ");
-            ThisStr.Append(TableName);
-            return ThisStr.ToString();
+            }
+            thisStr.Append(" from ");
+            thisStr.Append(tableName);
+            return thisStr.ToString();
         }
-
     }
 }

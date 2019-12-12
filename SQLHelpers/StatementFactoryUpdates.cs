@@ -1,23 +1,14 @@
-﻿using System;
-using System.Text;
-using CommonBasicStandardLibraries.Exceptions;
-using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
-using System.Linq;
-using CommonBasicStandardLibraries.BasicDataSettingsAndProcesses;
-using static CommonBasicStandardLibraries.BasicDataSettingsAndProcesses.BasicDataFunctions;
-using CommonBasicStandardLibraries.CollectionClasses;
-using System.Threading.Tasks; //most of the time, i will be using asyncs.
-using fs = CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.JsonSerializers.FileHelpers;
-using js = CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.JsonSerializers.NewtonJsonStrings; //just in case i need those 2.
-using DapperHelpersLibrary.MapHelpers;
+﻿using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
 using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.Misc;
-using static DapperHelpersLibrary.MapHelpers.MapBaseHelperClass;
-using System.Collections.Generic;
-using DapperHelpersLibrary.EntityInterfaces;
-using DapperHelpersLibrary.Attributes;
-using System.Reflection;
+using CommonBasicStandardLibraries.CollectionClasses;
+using CommonBasicStandardLibraries.DatabaseHelpers.EntityInterfaces;
+using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
+using CommonBasicStandardLibraries.Exceptions;
 using DapperHelpersLibrary.Extensions;
-//i think this is the most common things i like to do
+using DapperHelpersLibrary.MapHelpers;
+using System.Linq;
+using System.Text;
+using static DapperHelpersLibrary.MapHelpers.MapBaseHelperClass;
 namespace DapperHelpersLibrary.SQLHelpers
 {
     public static class StatementFactoryUpdates
@@ -28,125 +19,107 @@ namespace DapperHelpersLibrary.SQLHelpers
             All,
             Common //could decide to only update the common ones.
         }
-
-        internal static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetUpdateStatement<E>(E ThisEntity, CustomBasicList<UpdateFieldInfo> ManuelList) where E : class
+        internal static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetUpdateStatement<E>(E thisEntity, CustomBasicList<UpdateFieldInfo> manuelList) where E : class
         {
-            //could return ""  something else has to decide what to do.
-            if (ManuelList.Count == 0)
+            if (manuelList.Count == 0)
                 throw new BasicBlankException("If you are manually updating, you havve to send at least one field to update");
-            CustomBasicList<DatabaseMapping> UpdateList = GetParameterMappings<E>(ThisEntity, ManuelList);
-            return GetUpdateStatement(UpdateList);
+            CustomBasicList<DatabaseMapping> updateList = GetParameterMappings<E>(thisEntity, manuelList);
+            return GetUpdateStatement(updateList);
         }
 
-        internal static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetUpdateStatement<E>(CustomBasicList<UpdateEntity> ManuelList) where E : class
+        internal static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetUpdateStatement<E>(CustomBasicList<UpdateEntity> manuelList) where E : class
         {
-            //could return ""  something else has to decide what to do.
-            if (ManuelList.Count == 0)
+            if (manuelList.Count == 0)
                 throw new BasicBlankException("If you are manually updating, you havve to send at least one field to update");
-            CustomBasicList<DatabaseMapping> UpdateList = GetParameterMappings<E>(ManuelList);
-            return GetUpdateStatement(UpdateList);
+            CustomBasicList<DatabaseMapping> updateList = GetParameterMappings<E>(manuelList);
+            return GetUpdateStatement(updateList);
         }
 
-        internal static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetUpdateStatement<E>(E ThisEntity) where E : class, IUpdatableEntity
+        internal static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetUpdateStatement<E>(E thisEntity) where E : class, IUpdatableEntity
         {
-            CustomBasicList<DatabaseMapping> UpdateList = GetParameterMappings(ThisEntity);
-            return GetUpdateStatement(UpdateList);
+            CustomBasicList<DatabaseMapping> updateList = GetParameterMappings(thisEntity);
+            return GetUpdateStatement(updateList);
         }
 
-        internal static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetUpdateStatement<E>(E ThisEntity, EnumUpdateCategory Category) where E : class
+        internal static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetUpdateStatement<E>(E thisEntity, EnumUpdateCategory category) where E : class
         {
-            //could return ""  something else has to decide what to do.
-            CustomBasicList<DatabaseMapping> UpdateList = GetParameterMappings(ThisEntity, Category);
-            return GetUpdateStatement(UpdateList);
+            CustomBasicList<DatabaseMapping> updateList = GetParameterMappings(thisEntity, category);
+            return GetUpdateStatement(updateList);
         }
-
-        private static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetUpdateStatement(CustomBasicList<DatabaseMapping> UpdateList)
+        private static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetUpdateStatement(CustomBasicList<DatabaseMapping> updateList)
         {
-            if (UpdateList.Count == 0)
+            if (updateList.Count == 0)
                 return ("", new CustomBasicList<DatabaseMapping>());
-            StringBuilder ThisStr = new StringBuilder();
-            string TableName = UpdateList.First().TableName; //found a use for this.
-            ThisStr.Append("update ");
-            ThisStr.Append(TableName);
-            ThisStr.Append(" set ");
+            StringBuilder thisStr = new StringBuilder();
+            string tableName = updateList.First().TableName; //found a use for this.
+            thisStr.Append("update ");
+            thisStr.Append(tableName);
+            thisStr.Append(" set ");
             StrCat cats = new StrCat();
-            UpdateList.ForEach(Items =>
+            updateList.ForEach(Items =>
             {
                 cats.AddToString($"{Items.DatabaseName} = @{Items.DatabaseName}", ", ");
             });
-            ThisStr.Append(cats.GetInfo());
-            ThisStr.Append(" where ID = @ID");
-            return (ThisStr.ToString(), UpdateList);
+            thisStr.Append(cats.GetInfo());
+            thisStr.Append(" where ID = @ID");
+            return (thisStr.ToString(), updateList);
         }
-
-
-
-
-        private static CustomBasicList<DatabaseMapping> GetParameterMappings<E>(CustomBasicList<UpdateEntity> UpdateList) where E : class
+        private static CustomBasicList<DatabaseMapping> GetParameterMappings<E>(CustomBasicList<UpdateEntity> updateList) where E : class
         {
-            if (UpdateList.Count == 0)
+            if (updateList.Count == 0)
                 return new CustomBasicList<DatabaseMapping>();
-            CustomBasicList<DatabaseMapping> MapList = GetMappingList<E>(out string _);
-            CustomBasicList<DatabaseMapping> NewList = new CustomBasicList<DatabaseMapping>();
-            UpdateList.ForEach(Items =>
+            CustomBasicList<DatabaseMapping> mapList = GetMappingList<E>(out string _);
+            CustomBasicList<DatabaseMapping> newList = new CustomBasicList<DatabaseMapping>();
+            updateList.ForEach(items =>
             {
-                DatabaseMapping ThisMap = FindMappingForProperty(Items, MapList);
-                ThisMap.Value = Items.Value;
-                if (Items.Property == "ID")
+                DatabaseMapping thisMap = FindMappingForProperty(items, mapList);
+                thisMap.Value = items.Value;
+                if (items.Property == "ID")
                     throw new BasicBlankException("You are not allowed to update the ID");
-                NewList.Add(ThisMap); //if you are doing manually, then you don't even update the object.
+                newList.Add(thisMap); //if you are doing manually, then you don't even update the object.
             });
-            return NewList; //hopefully its that simple.
+            return newList; //hopefully its that simple.
         }
-
-
-        private static CustomBasicList<DatabaseMapping> GetParameterMappings<E>(E ThisEntity, CustomBasicList<UpdateFieldInfo> UpdateList) where E : class
+        private static CustomBasicList<DatabaseMapping> GetParameterMappings<E>(E thisEntity, CustomBasicList<UpdateFieldInfo> updateList) where E : class
         {
-            if (UpdateList.Count == 0)
+            if (updateList.Count == 0)
                 return new CustomBasicList<DatabaseMapping>();
-            //CustomBasicList<DatabaseMapping> MapList = GetMappingList<E>(out string _);
-            CustomBasicList<DatabaseMapping> MapList = GetMappingList(ThisEntity, out string _);
-            CustomBasicList<DatabaseMapping> NewList = new CustomBasicList<DatabaseMapping>();
-            UpdateList.ForEach(Items =>
+            CustomBasicList<DatabaseMapping> mapList = GetMappingList(thisEntity, out string _);
+            CustomBasicList<DatabaseMapping> newList = new CustomBasicList<DatabaseMapping>();
+            updateList.ForEach(items =>
             {
-                DatabaseMapping ThisMap = FindMappingForProperty(Items, MapList);
-                ThisMap.Value = ThisMap.PropertyDetails.GetValue(ThisEntity, null);
-                if (Items.Property == "ID")
+                DatabaseMapping thisMap = FindMappingForProperty(items, mapList);
+                thisMap.Value = thisMap.PropertyDetails.GetValue(thisEntity, null);
+                if (items.Property == "ID")
                     throw new BasicBlankException("You are not allowed to update the ID");
-                NewList.Add(ThisMap); //if you are doing manually, then you don't even update the object.
+                newList.Add(thisMap); //if you are doing manually, then you don't even update the object.
             });
-            return NewList; //hopefully its that simple.
+            return newList; //hopefully its that simple.
         }
-
-        private static CustomBasicList<DatabaseMapping> GetParameterMappings<E>(E ThisEntity) where E : class, IUpdatableEntity
+        private static CustomBasicList<DatabaseMapping> GetParameterMappings<E>(E thisEntity) where E : class, IUpdatableEntity
         {
-            CustomBasicList<UpdateFieldInfo> UpdateList = new CustomBasicList<UpdateFieldInfo>();
-            CustomBasicList<string> FirstList = ThisEntity.GetChanges();
-            UpdateList.Append(FirstList);
-            return GetParameterMappings(ThisEntity, UpdateList);
+            CustomBasicList<UpdateFieldInfo> updateList = new CustomBasicList<UpdateFieldInfo>();
+            CustomBasicList<string> firstList = thisEntity.GetChanges();
+            updateList.Append(firstList);
+            return GetParameterMappings(thisEntity, updateList);
         }
-
-        //if i decide to have conditional updates not just id or updating based on those, rethinking is required.
-        //of course a person can always do a manuel sql statement as well.
-        private static CustomBasicList<DatabaseMapping> GetParameterMappings<E>(E ThisEntity, EnumUpdateCategory Category) where E: class
+        private static CustomBasicList<DatabaseMapping> GetParameterMappings<E>(E thisEntity, EnumUpdateCategory category) where E : class
         {
-            CustomBasicList<UpdateFieldInfo> UpdateList = new CustomBasicList<UpdateFieldInfo>();
-            if (Category == EnumUpdateCategory.Auto)
+            CustomBasicList<UpdateFieldInfo> updateList = new CustomBasicList<UpdateFieldInfo>();
+            if (category == EnumUpdateCategory.Auto)
             {
-                return GetParameterMappings((IUpdatableEntity) ThisEntity);
+                return GetParameterMappings((IUpdatableEntity)thisEntity);
             }
-            CustomBasicList<DatabaseMapping> MapList = GetMappingList(ThisEntity,  out string _); //maybe that will fix that problem.
-            if (Category == EnumUpdateCategory.Common)
-                MapList.RemoveAllOnly(Items => Items.CommonForUpdating == false);
+            CustomBasicList<DatabaseMapping> mapList = GetMappingList(thisEntity, out string _); //maybe that will fix that problem.
+            if (category == EnumUpdateCategory.Common)
+                mapList.RemoveAllOnly(Items => Items.CommonForUpdating == false);
             else
-                MapList.RemoveAllOnly(Items => Items.DatabaseName == "ID");
-            //return GetParameterMappings(ThisEntity, UpdateList, MapList);
-            MapList.ForEach(Items =>
+                mapList.RemoveAllOnly(Items => Items.DatabaseName == "ID");
+            mapList.ForEach(items =>
             {
-                Items.Value = Items.PropertyDetails.GetValue(ThisEntity, null);
+                items.Value = items.PropertyDetails.GetValue(thisEntity, null);
             });
-            return MapList;
+            return mapList;
         }
-
     }
 }

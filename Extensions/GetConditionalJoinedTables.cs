@@ -1,169 +1,128 @@
-﻿using CommonBasicStandardLibraries.CollectionClasses;
+﻿using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
+using CommonBasicStandardLibraries.CollectionClasses;
+using CommonBasicStandardLibraries.DatabaseHelpers.ConditionClasses;
+using CommonBasicStandardLibraries.DatabaseHelpers.EntityInterfaces;
+using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
+using CommonBasicStandardLibraries.DatabaseHelpers.MiscInterfaces;
 using Dapper;
-using DapperHelpersLibrary.EntityInterfaces;
 using DapperHelpersLibrary.MapHelpers;
+using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks; //most of the time, i will be using asyncs.
-using static DapperHelpersLibrary.MapHelpers.MapBaseHelperClass;
-using static DapperHelpersLibrary.SQLHelpers.PopulateDynamics;
-using static DapperHelpersLibrary.SQLHelpers.SimpleStatementHelpers;
-using static DapperHelpersLibrary.Extensions.ReflectionDatabase;
-using System.Collections.Generic;
-using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
-using DapperHelpersLibrary.ConditionClasses;
-using static DapperHelpersLibrary.SQLHelpers.StatementFactoryConditionsSingle;//i think this is the most common things i like to do
-using System;
 using static DapperHelpersLibrary.Extensions.GetSimple;
+using static DapperHelpersLibrary.SQLHelpers.PopulateDynamics;
 using static DapperHelpersLibrary.SQLHelpers.StatementSelectFactoryJoin;
-using DapperHelpersLibrary.SQLHelpers;
-using CommonBasicStandardLibraries.Exceptions;
 namespace DapperHelpersLibrary.Extensions
 {
     public static class GetConditionalJoinedTables
     {
         //looks like the feature has to be one to one.  one to many probably would not work.
         //because it would choose the first item and that would be it.
-
         #region One To Many 
-
-       
-
-        public static CustomBasicList<E> GetOneToMany<E, D1>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList = null, Action<E, D1> action = null, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
+        public static CustomBasicList<E> GetOneToMany<E, D1>(this IDbConnection db, CustomBasicList<ICondition> conditionList, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? ConnectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
-            var FirstList = db.PrivateOneToManySelectConditional(ConditionList, SortList, action, ThisTran, ConnectionTimeOut);
-            return FirstList.ToCustomBasicList();
+            var firstList = db.PrivateOneToManySelectConditional(conditionList, conn, sortList, action, thisTran, ConnectionTimeOut);
+            return firstList.ToCustomBasicList();
         }
-
-        public static CustomBasicList<E> GetOneToMany<E, D1, D2>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList = null, Action<E, D1, D2> action = null, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        public static CustomBasicList<E> GetOneToMany<E, D1, D2>(this IDbConnection db, CustomBasicList<ICondition> conditionList, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
-            var FirstList = db.PrivateOneToManySelectConditional(ConditionList, SortList, action, ThisTran, ConnectionTimeOut);
-            return FirstList.ToCustomBasicList();
+            var firstList = db.PrivateOneToManySelectConditional(conditionList, conn, sortList, action, thisTran, connectionTimeOut);
+            return firstList.ToCustomBasicList();
         }
-
-        public async static Task<CustomBasicList<E>> GetOneToManyAsync<E, D1>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList = null, Action<E, D1> action = null, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
+        public async static Task<CustomBasicList<E>> GetOneToManyAsync<E, D1>(this IDbConnection db, CustomBasicList<ICondition> conditionList, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
-            //string sqls = GetSimpleSelectStatement<E, D1>();
-            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1>(ConditionList, SortList, false, EnumDatabaseCategory.SQLServer, 0);
+            EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
+            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1>(conditionList, sortList, false, category, 0);
+            DapperSQLData thisData = new DapperSQLData();
+            thisData.SQLStatement = sqls;
+            PopulateSimple(ParameterMappings, thisData, EnumCategory.Conditional);
+            Dictionary<int, E> thisDict = new Dictionary<int, E>();
+            var thisList = await db.QueryAsync<E, D1, E>(sqls, (Main, Detail) => PrivateGetOneToMany(Main, Detail, action, thisDict), thisData.Parameters, thisTran, commandTimeout: connectionTimeOut);
+            return thisList.Distinct().ToCustomBasicList();
+        }
+        public async static Task<CustomBasicList<E>> GetOneToManyAsync<E, D1, D2>(this IDbConnection db, CustomBasicList<ICondition> conditionList, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        {
+            EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
+            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1, D2>(conditionList, sortList, category, 0, false);
+            DapperSQLData thisData = new DapperSQLData();
+            thisData.SQLStatement = sqls;
+            PopulateSimple(ParameterMappings, thisData, EnumCategory.Conditional);
+            Dictionary<int, E> thisDict = new Dictionary<int, E>();
+            var thisList = await db.QueryAsync<E, D1, D2, E>(sqls, (Main, Detail1, Detail2) => PrivateGetOneToMany(Main, Detail1, Detail2, action, thisDict), thisData.Parameters, thisTran, commandTimeout: connectionTimeOut);
+            return thisList.Distinct().ToCustomBasicList();
+        }
+        private static IEnumerable<E> PrivateOneToManySelectConditional<E, D1>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
+        {
+            EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
+            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1>(ConditionList, sortList, false, category, 0);
+            DapperSQLData thisData = new DapperSQLData();
+            thisData.SQLStatement = sqls;
+            PopulateSimple(ParameterMappings, thisData, EnumCategory.Conditional);
+            Dictionary<int, E> thisDict = new Dictionary<int, E>();
+            return db.Query<E, D1, E>(sqls, (Main, Detail) => PrivateGetOneToMany(Main, Detail, action, thisDict), thisData.Parameters, thisTran, commandTimeout: connectionTimeOut).Distinct();
+        } 
+        private static IEnumerable<E> PrivateOneToManySelectConditional<E, D1, D2>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? ConnectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        {
+            EnumDatabaseCategory Category = db.GetDatabaseCategory(conn);
+            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1, D2>(ConditionList, sortList, Category, 0, false);
             DapperSQLData ThisData = new DapperSQLData();
             ThisData.SQLStatement = sqls;
             PopulateSimple(ParameterMappings, ThisData, EnumCategory.Conditional);
             Dictionary<int, E> ThisDict = new Dictionary<int, E>();
-            var ThisList = await db.QueryAsync<E, D1, E>(sqls, (Main, Detail) => PrivateGetOneToMany(Main, Detail, action, ThisDict), ThisData.Parameters, ThisTran, commandTimeout: ConnectionTimeOut);
-            return ThisList.Distinct().ToCustomBasicList();
-        }
-
-
-        public async static Task<CustomBasicList<E>> GetOneToManyAsync<E, D1, D2>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList = null, Action<E, D1, D2> action = null, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
-        {
-            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1, D2>(ConditionList, SortList, EnumDatabaseCategory.SQLServer, 0, false);
-            //i am missing one more thing.
-            DapperSQLData ThisData = new DapperSQLData();
-            ThisData.SQLStatement = sqls;
-            PopulateSimple(ParameterMappings, ThisData, EnumCategory.Conditional);
-            Dictionary<int, E> ThisDict = new Dictionary<int, E>();
-            var ThisList  = await db.QueryAsync<E, D1, D2, E>(sqls, (Main, Detail1, Detail2) => PrivateGetOneToMany(Main, Detail1, Detail2, action, ThisDict), ThisData.Parameters, ThisTran, commandTimeout: ConnectionTimeOut);
-            return ThisList.Distinct().ToCustomBasicList();
-        }
-
-
-        private static IEnumerable<E> PrivateOneToManySelectConditional<E, D1>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList = null, Action<E, D1> action = null, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
-        {
-            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1>(ConditionList, SortList, false, EnumDatabaseCategory.SQLServer, 0);
-            //i am missing one more thing.
-            DapperSQLData ThisData = new DapperSQLData();
-            ThisData.SQLStatement = sqls;
-            PopulateSimple(ParameterMappings, ThisData, EnumCategory.Conditional);
-            Dictionary<int, E> ThisDict = new Dictionary<int, E>();
-            //throw new BasicBlankException(sqls);
-            return db.Query<E, D1, E>(sqls, (Main, Detail) => PrivateGetOneToMany(Main, Detail, action, ThisDict), ThisData.Parameters, ThisTran, commandTimeout: ConnectionTimeOut).Distinct();
-        } //if you need transaction, will think about that as well
-
-        private static IEnumerable<E> PrivateOneToManySelectConditional<E, D1, D2>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList = null, Action<E, D1, D2> action = null, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2: class
-        {
-            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1, D2>(ConditionList, SortList, EnumDatabaseCategory.SQLServer, 0, false);
-            //i am missing one more thing.
-            DapperSQLData ThisData = new DapperSQLData();
-            ThisData.SQLStatement = sqls;
-            PopulateSimple(ParameterMappings, ThisData, EnumCategory.Conditional);
-            Dictionary<int, E> ThisDict = new Dictionary<int, E>();
-            return db.Query<E, D1, D2, E>(sqls, (Main, Detail1, Detail2) => PrivateGetOneToMany(Main, Detail1, Detail2, action, ThisDict), ThisData.Parameters, ThisTran, commandTimeout: ConnectionTimeOut).Distinct();
-        } //if you need transaction, will think about that as well
-
-
-
-
+            return db.Query<E, D1, D2, E>(sqls, (Main, Detail1, Detail2) => PrivateGetOneToMany(Main, Detail1, Detail2, action, ThisDict), ThisData.Parameters, thisTran, commandTimeout: ConnectionTimeOut).Distinct();
+        } 
         #endregion
-
         #region joined 2 Tables
-
         //decided to leave as ienumerable.  can change if i decide to.
-
-        public static IEnumerable<E> Get<E, D1>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList = null, int HowMany = 0, Action<E, D1> action = null, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
+        public static IEnumerable<E> Get<E, D1>(this IDbConnection db, CustomBasicList<ICondition> conditionList, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, int HowMany = 0, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
-            return db.PrivateOneToOneSelectConditional(ConditionList, SortList, HowMany, action, ThisTran, ConnectionTimeOut);
+            return db.PrivateOneToOneSelectConditional(conditionList, conn, sortList, HowMany, action, thisTran, connectionTimeOut);
         }
-
         //i think the best bet instead of creating another method is just sending in 1.
-
-       
-        public async static Task<IEnumerable<E>> GetAsync<E, D1>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList = null, int HowMany = 0, Action<E, D1> action = null, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
+        public async static Task<IEnumerable<E>> GetAsync<E, D1>(this IDbConnection db, CustomBasicList<ICondition> conditionList, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, int HowMany = 0, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
-            EnumDatabaseCategory Category = db.GetDatabaseCategory();
-            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1>(ConditionList, SortList, true, Category, HowMany);
+            EnumDatabaseCategory Category = db.GetDatabaseCategory(conn);
+            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1>(conditionList, sortList, true, Category, HowMany);
             DapperSQLData ThisData = new DapperSQLData();
             ThisData.SQLStatement = sqls;
             PopulateSimple(ParameterMappings, ThisData, EnumCategory.Conditional);
-            return await db.QueryAsync<E, D1, E>(sqls, (Main, Detail) => PrivateOneToOne(Main, Detail, action), ThisData.Parameters, ThisTran, commandTimeout: ConnectionTimeOut);
+            return await db.QueryAsync<E, D1, E>(sqls, (Main, Detail) => PrivateOneToOne(Main, Detail, action), ThisData.Parameters, thisTran, commandTimeout: connectionTimeOut);
         }
-
-       
-        private static IEnumerable<E> PrivateOneToOneSelectConditional<E, D1>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList = null, int HowMany = 0, Action<E, D1> action = null, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
+        private static IEnumerable<E> PrivateOneToOneSelectConditional<E, D1>(this IDbConnection db, CustomBasicList<ICondition> conditionList, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, int HowMany = 0, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? ConnectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
-            EnumDatabaseCategory Category = db.GetDatabaseCategory();
-            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1>(ConditionList, SortList, true, Category, HowMany);
-            DapperSQLData ThisData = new DapperSQLData();
-            ThisData.SQLStatement = sqls;
-            PopulateSimple(ParameterMappings, ThisData, EnumCategory.Conditional);
-            return db.Query<E, D1, E>(sqls, (Main, Detail) => PrivateOneToOne(Main, Detail, action), ThisData.Parameters, ThisTran, commandTimeout: ConnectionTimeOut);
-        } //if you need transaction, will think about that as well
-
-
-
+            EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
+            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1>(conditionList, sortList, true, category, HowMany);
+            DapperSQLData thisData = new DapperSQLData();
+            thisData.SQLStatement = sqls;
+            PopulateSimple(ParameterMappings, thisData, EnumCategory.Conditional);
+            return db.Query<E, D1, E>(sqls, (Main, Detail) => PrivateOneToOne(Main, Detail, action), thisData.Parameters, thisTran, commandTimeout: ConnectionTimeOut);
+        } 
         #endregion
-
         #region Join 3 Tables
-
-       
-
-        public static IEnumerable<E> Get<E, D1, D2>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList = null, int HowMany = 0, Action<E, D1, D2> action = null, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        public static IEnumerable<E> Get<E, D1, D2>(this IDbConnection db, CustomBasicList<ICondition> conditionList, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, int howMany = 0, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
-            return db.PrivateOneToOneSelectConditional(ConditionList, SortList, HowMany, action, ThisTran, ConnectionTimeOut);
+            return db.PrivateOneToOneSelectConditional(conditionList, conn, sortList, howMany, action, thisTran, connectionTimeOut);
         }
-       
-        public async static Task<IEnumerable<E>> GetAsync <E, D1, D2>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList = null, int HowMany = 0, Action<E, D1, D2> action = null, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        public async static Task<IEnumerable<E>> GetAsync<E, D1, D2>(this IDbConnection db, CustomBasicList<ICondition> conditionList, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, int howMany = 0, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
-            EnumDatabaseCategory Category = db.GetDatabaseCategory();
-            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1, D2>(ConditionList, SortList, Category, HowMany);
+            EnumDatabaseCategory Category = db.GetDatabaseCategory(conn);
+            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1, D2>(conditionList, sortList, Category, howMany);
             DapperSQLData ThisData = new DapperSQLData();
             ThisData.SQLStatement = sqls;
             PopulateSimple(ParameterMappings, ThisData, EnumCategory.Conditional);
-            return await db.QueryAsync<E, D1, D2, E>(sqls, (Main, Detail1, Detail2) => PrivateOneToOne(Main, Detail1, Detail2, action), ThisData.Parameters, ThisTran, commandTimeout: ConnectionTimeOut);
+            return await db.QueryAsync<E, D1, D2, E>(sqls, (Main, Detail1, Detail2) => PrivateOneToOne(Main, Detail1, Detail2, action), ThisData.Parameters, thisTran, commandTimeout: connectionTimeOut);
         }
-
-        
-        private static IEnumerable<E> PrivateOneToOneSelectConditional<E, D1, D2>(this IDbConnection db, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList = null, int HowMany = 0, Action<E, D1, D2> action = null, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        private static IEnumerable<E> PrivateOneToOneSelectConditional<E, D1, D2>(this IDbConnection db, CustomBasicList<ICondition> conditionList, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, int howMany = 0, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? ConnectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
-            EnumDatabaseCategory Category = db.GetDatabaseCategory();
-            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1, D2>(ConditionList, SortList, Category, HowMany);
+            EnumDatabaseCategory Category = db.GetDatabaseCategory(conn);
+            var (sqls, ParameterMappings) = GetConditionalStatement<E, D1, D2>(conditionList, sortList, Category, howMany);
             DapperSQLData ThisData = new DapperSQLData();
             ThisData.SQLStatement = sqls;
             PopulateSimple(ParameterMappings, ThisData, EnumCategory.Conditional);
-            return db.Query<E, D1, D2, E>(sqls, (Main, Detail1, Detail2) => PrivateOneToOne(Main, Detail1, Detail2, action), ThisData.Parameters, ThisTran, commandTimeout: ConnectionTimeOut);
-        } //if you need transaction, will think about that as well
-
-        
+            return db.Query<E, D1, D2, E>(sqls, (Main, Detail1, Detail2) => PrivateOneToOne(Main, Detail1, Detail2, action), ThisData.Parameters, thisTran, commandTimeout: ConnectionTimeOut);
+        }
         #endregion
     }
 }

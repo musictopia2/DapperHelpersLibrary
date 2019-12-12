@@ -1,83 +1,79 @@
-﻿using Dapper;
-using DapperHelpersLibrary.EntityInterfaces;
+﻿using CommonBasicStandardLibraries.CollectionClasses;
+using Dapper;
 using DapperHelpersLibrary.MapHelpers;
 using System.Data;
 using System.Text;
 using System.Threading.Tasks;
-using static DapperHelpersLibrary.Extensions.ReflectionDatabase;
+using static DapperHelpersLibrary.MapHelpers.MapBaseHelperClass;
 using static DapperHelpersLibrary.SQLHelpers.PopulateDynamics;
 using static DapperHelpersLibrary.SQLHelpers.SimpleStatementHelpers;
-using CommonBasicStandardLibraries.CollectionClasses;
-using DapperHelpersLibrary.ConditionClasses;
 using static DapperHelpersLibrary.SQLHelpers.StatementFactoryConditionsSingle;
-using static DapperHelpersLibrary.MapHelpers.MapBaseHelperClass;
-//i think this is the most common things i like to do
+using static CommonBasicStandardLibraries.DatabaseHelpers.Extensions.ReflectionDatabase;
+using CommonBasicStandardLibraries.DatabaseHelpers.ConditionClasses;
+using CommonBasicStandardLibraries.DatabaseHelpers.EntityInterfaces;
+using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
+using CommonBasicStandardLibraries.DatabaseHelpers.MiscInterfaces;
 namespace DapperHelpersLibrary.Extensions
 {
     public static class DeleteSimple
     {
-        internal static DapperSQLData PrivateDeleteSingleItem<E>(int ID) where E : class
+        internal static DapperSQLData PrivateDeleteSingleItem<E>(int id) where E : class
         {
             StringBuilder builder = new StringBuilder();
             string tablename = GetTableName<E>();
             builder.Append(GetDeleteStatement(tablename));
-            DynamicParameters dynamic = GetDynamicIDData(ref builder, ID);
+            DynamicParameters dynamic = GetDynamicIDData(ref builder, id);
             return new DapperSQLData() { Parameters = dynamic, SQLStatement = builder.ToString() };
         }
-        public static void Delete<E>(this IDbConnection db, int ID, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class
+        public static void Delete<E>(this IDbConnection db, int id, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
         {
-            DapperSQLData dapper = PrivateDeleteSingleItem<E>(ID);
-            db.Execute(dapper.SQLStatement, dapper.Parameters, ThisTran, ConnectionTimeOut);
+            DapperSQLData dapper = PrivateDeleteSingleItem<E>(id);
+            db.Execute(dapper.SQLStatement, dapper.Parameters, thisTran, connectionTimeOut);
         }
-
-        public static void DeleteEverythingFromTable<E>(this IDbConnection db, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class
-        {
-            string tablename = GetTableName<E>();
-            string sqls = GetDeleteStatement(tablename);
-            db.Execute(sqls, null, ThisTran, ConnectionTimeOut);
-        }
-        public static void Delete<E>(this IDbConnection db, E ThisObj, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, ISimpleDapperEntity
-        {
-            db.Delete<E>(ThisObj.ID, ThisTran, ConnectionTimeOut);
-        }
-
-        public static async Task DeleteAsync<E>(this IDbConnection db, int ID, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class
-        {
-            DapperSQLData dapper = PrivateDeleteSingleItem<E>(ID);
-            await db.ExecuteAsync(dapper.SQLStatement, dapper.Parameters, ThisTran, ConnectionTimeOut);
-        }
-
-        public static async Task DeleteEntireTableAsync<E>(this IDbConnection db, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class
+        public static void DeleteEverythingFromTable<E>(this IDbConnection db, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
         {
             string tablename = GetTableName<E>();
             string sqls = GetDeleteStatement(tablename);
-            await db.ExecuteAsync(sqls, null, ThisTran, ConnectionTimeOut);
+            db.Execute(sqls, null, thisTran, connectionTimeOut);
         }
-        public static async Task DeleteAsync<E>(this IDbConnection db, E ThisObj, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, ISimpleDapperEntity
+        public static void Delete<E>(this IDbConnection db, E ThisObj, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, ISimpleDapperEntity
         {
-            await db.DeleteAsync<E>(ThisObj.ID, ThisTran, ConnectionTimeOut);
+            db.Delete<E>(ThisObj.ID, thisTran, connectionTimeOut);
         }
-
-        public static async Task DeleteAsync<E>(this IDbConnection db, CustomBasicList<ICondition> Conditions, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, ISimpleDapperEntity
+        public static async Task DeleteAsync<E>(this IDbConnection db, int ID, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
         {
-            CustomBasicList<DatabaseMapping> ThisList = GetMappingList<E>(out string TableName);
-            EnumDatabaseCategory Database = db.GetDatabaseCategory();
-            var (sqls, ParameterMappings) = GetConditionalStatement(ThisList, TableName, Conditions, null, Database, EnumSQLCategory.Delete);
-            DapperSQLData ThisData = new DapperSQLData();
-            ThisData.SQLStatement = sqls;
-            PopulateSimple(ParameterMappings, ThisData, EnumCategory.Conditional);
-            await db.ExecuteAsync(sqls, ThisData.Parameters, ThisTran, ConnectionTimeOut);
+            DapperSQLData dapper = PrivateDeleteSingleItem<E>(ID);
+            await db.ExecuteAsync(dapper.SQLStatement, dapper.Parameters, thisTran, connectionTimeOut);
         }
-        public static void Delete<E>(this IDbConnection db, CustomBasicList<ICondition> Conditions, IDbTransaction ThisTran = null, int? ConnectionTimeOut = null) where E : class, ISimpleDapperEntity
+        public static async Task DeleteEntireTableAsync<E>(this IDbConnection db, IDbTransaction? thisTran = null, int? ConnectionTimeOut = null) where E : class
         {
-            EnumDatabaseCategory Database = db.GetDatabaseCategory();
-            CustomBasicList<DatabaseMapping> ThisList = GetMappingList<E>(out string TableName);
-            var (sqls, ParameterMappings) = GetConditionalStatement(ThisList, TableName, Conditions, null, Database, EnumSQLCategory.Delete);
-            DapperSQLData ThisData = new DapperSQLData();
-            ThisData.SQLStatement = sqls;
-            PopulateSimple(ParameterMappings, ThisData, EnumCategory.Conditional);
-            db.Execute(sqls, ThisData.Parameters, ThisTran, ConnectionTimeOut);
+            string tablename = GetTableName<E>();
+            string sqls = GetDeleteStatement(tablename);
+            await db.ExecuteAsync(sqls, null, thisTran, ConnectionTimeOut);
         }
-
+        public static async Task DeleteAsync<E>(this IDbConnection db, E thisObj, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, ISimpleDapperEntity
+        {
+            await db.DeleteAsync<E>(thisObj.ID, thisTran, connectionTimeOut);
+        }
+        public static async Task DeleteAsync<E>(this IDbConnection db, CustomBasicList<ICondition> conditions, IDbConnector conn, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, ISimpleDapperEntity
+        {
+            CustomBasicList<DatabaseMapping> thisList = GetMappingList<E>(out string TableName);
+            EnumDatabaseCategory database = db.GetDatabaseCategory(conn);
+            var (sqls, ParameterMappings) = GetConditionalStatement(thisList, TableName, conditions, null, database, EnumSQLCategory.Delete);
+            DapperSQLData thisData = new DapperSQLData();
+            thisData.SQLStatement = sqls;
+            PopulateSimple(ParameterMappings, thisData, EnumCategory.Conditional);
+            await db.ExecuteAsync(sqls, thisData.Parameters, thisTran, connectionTimeOut);
+        }
+        public static void Delete<E>(this IDbConnection db, CustomBasicList<ICondition> conditions, IDbConnector conn, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, ISimpleDapperEntity
+        {
+            EnumDatabaseCategory database = db.GetDatabaseCategory(conn);
+            CustomBasicList<DatabaseMapping> thisList = GetMappingList<E>(out string TableName);
+            var (sqls, ParameterMappings) = GetConditionalStatement(thisList, TableName, conditions, null, database, EnumSQLCategory.Delete);
+            DapperSQLData thisData = new DapperSQLData();
+            thisData.SQLStatement = sqls;
+            PopulateSimple(ParameterMappings, thisData, EnumCategory.Conditional);
+            db.Execute(sqls, thisData.Parameters, thisTran, connectionTimeOut);
+        }
     }
 }

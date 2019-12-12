@@ -1,25 +1,20 @@
-﻿using System;
-using System.Text;
-using CommonBasicStandardLibraries.Exceptions;
-using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
-using System.Linq;
-using CommonBasicStandardLibraries.BasicDataSettingsAndProcesses;
-using static CommonBasicStandardLibraries.BasicDataSettingsAndProcesses.BasicDataFunctions;
-using CommonBasicStandardLibraries.CollectionClasses;
-using System.Threading.Tasks; //most of the time, i will be using asyncs.
-using fs = CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.JsonSerializers.FileHelpers;
-using js = CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.JsonSerializers.NewtonJsonStrings; //just in case i need those 2.
-using DapperHelpersLibrary.MapHelpers;
+﻿using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
 using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.Misc;
-using static DapperHelpersLibrary.MapHelpers.MapBaseHelperClass;
-using DapperHelpersLibrary.EntityInterfaces;
-using static DapperHelpersLibrary.Extensions.ReflectionDatabase;
-using DapperHelpersLibrary.ConditionClasses;
-using System.Collections.Generic;
-using cs = DapperHelpersLibrary.ConditionClasses.ConditionOperators;
+using CommonBasicStandardLibraries.CollectionClasses;
+using CommonBasicStandardLibraries.DatabaseHelpers.ConditionClasses;
+using CommonBasicStandardLibraries.DatabaseHelpers.EntityInterfaces;
+using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
+using CommonBasicStandardLibraries.Exceptions;
 using DapperHelpersLibrary.Extensions;
+using DapperHelpersLibrary.MapHelpers;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using static DapperHelpersLibrary.MapHelpers.MapBaseHelperClass;
 using static DapperHelpersLibrary.SQLHelpers.SimpleStatementHelpers;
-//i think this is the most common things i like to do
+using cs = CommonBasicStandardLibraries.DatabaseHelpers.ConditionClasses.ConditionOperators;
+using CommonBasicStandardLibraries.DatabaseHelpers.Extensions;
+using static CommonBasicStandardLibraries.DatabaseHelpers.Extensions.ReflectionDatabase;
 namespace DapperHelpersLibrary.SQLHelpers
 {
     internal static class StatementSelectFactoryJoin
@@ -30,324 +25,218 @@ namespace DapperHelpersLibrary.SQLHelpers
         //even get the conditions with 2 done as well.
         //the simple join will not have parameters (because no where clause).
         //looks like i need an optional parameter.  if set, then opposite needs to be done.
-        //can take a risk.  i may need to test deeper (well see).
-
-
         #region No Conditions
-        public static string GetSimpleSelectStatement<E, D1, D2>(CustomBasicList<SortInfo> SortList, EnumDatabaseCategory category, int HowMany = 0) where E : class, ISimpleDapperEntity where D1 : class where D2: class
+        public static string GetSimpleSelectStatement<E, D1, D2>(CustomBasicList<SortInfo>? sortList, EnumDatabaseCategory category, int howMany = 0) where E : class, ISimpleDapperEntity where D1 : class where D2 : class
         {
-            StartList<E>(out CustomBasicList<DatabaseMapping> ThisList, out CustomBasicList<string> JoinList, out string TableName);
+            StartList<E>(out CustomBasicList<DatabaseMapping> thisList, out CustomBasicList<string> joinList, out string tableName);
             //hopefully we don't need it with no conditions.  because that part only seems to be put in with conditions.
             //i may have to rethink some things too.
-            AppendList<E, D1>(ThisList, JoinList, "b");
-            AppendList<E, D2>(ThisList, JoinList, "c");
-            string sqls = GetSimpleSelectStatement(ThisList, JoinList, TableName, category, HowMany);
-            if (SortList == null)
+            AppendList<E, D1>(thisList, joinList, "b");
+            AppendList<E, D2>(thisList, joinList, "c");
+            string sqls = GetSimpleSelectStatement(thisList, joinList, tableName, category, howMany);
+            if (sortList == null)
                 return sqls;
-            StringBuilder ThisStr = new StringBuilder(sqls);
-            ThisStr.Append(GetSortStatement(ThisList, SortList, false));
-            ThisStr.Append(GetLimitSQLite(category, HowMany));
-            return ThisStr.ToString();
-            
+            StringBuilder thisStr = new StringBuilder(sqls);
+            thisStr.Append(GetSortStatement(thisList, sortList, false));
+            thisStr.Append(GetLimitSQLite(category, howMany));
+            return thisStr.ToString();
         }
-        private static void StartList<E>(out CustomBasicList<DatabaseMapping> ThisList, out CustomBasicList<string> JoinList, out string TableName) where E:class
+        private static void StartList<E>(out CustomBasicList<DatabaseMapping> thisList, out CustomBasicList<string> joinList, out string tableName) where E : class
         {
-            ThisList = GetMappingList<E>(out TableName);
-            JoinList = new CustomBasicList<string>();
-            ThisList.ForEach(Items => Items.Prefix = "a");
+            thisList = GetMappingList<E>(out tableName);
+            joinList = new CustomBasicList<string>();
+            thisList.ForEach(Items => Items.Prefix = "a");
         }
-        private static void AppendList<E, D>(CustomBasicList<DatabaseMapping> ThisList, CustomBasicList<string> JoinList, string Prefix, bool IsOneToOne = true, string Firsts = "a", string NewTable = "") where D:class where E:class
+        private static void AppendList<E, D>(CustomBasicList<DatabaseMapping> thisList, CustomBasicList<string> joinList, string prefix, bool isOneToOne = true, string firsts = "a", string newTable = "") where D : class where E : class
         {
-            CustomBasicList<DatabaseMapping> NewList = GetMappingList<D>(out string TableName, IsOneToOne); //unfortunately, it needs them all in that case since queries can be used for it.
-            //CustomBasicList<DatabaseMapping> NewList = GetMappingList<D>(out string TableName, true); //try this.  has to rerun the tests.
-            NewList.ForEach(Items => Items.Prefix = Prefix);
-            ThisList.AddRange(NewList);
-            string Foreign;
-            string OtherTable;
-            string ThisStr;
-            if (NewTable != "")
-                OtherTable = NewTable;
-            else    
-                OtherTable = typeof(D).GetTableName();
-            if (IsOneToOne == true)
+            CustomBasicList<DatabaseMapping> newList = GetMappingList<D>(out string tableName, isOneToOne); //unfortunately, it needs them all in that case since queries can be used for it.
+            newList.ForEach(items => items.Prefix = prefix);
+            thisList.AddRange(newList);
+            string foreign;
+            string otherTable;
+            string thisStr;
+            if (newTable != "")
+                otherTable = newTable;
+            else
+                otherTable = typeof(D).GetTableName();
+            if (isOneToOne == true)
             {
-                Foreign = GetJoiner<E, D>();
-                ThisStr = $"{OtherTable} {Prefix} on {Firsts}.{Foreign}={Prefix}.ID";
+                foreign = GetJoiner<E, D>();
+                thisStr = $"{otherTable} {prefix} on {firsts}.{foreign}={prefix}.ID";
             }
             else
             {
-                Foreign = GetJoiner<D, E>();
-                ThisStr = $"{OtherTable} {Prefix} on {Firsts}.ID={Prefix}.{Foreign}";
+                foreign = GetJoiner<D, E>();
+                thisStr = $"{otherTable} {prefix} on {firsts}.ID={prefix}.{foreign}";
             }
-            JoinList.Add(ThisStr);
+            joinList.Add(thisStr);
         }
-
-        public static string GetSimpleSelectStatement<E, D1>(bool IsOneToOne, CustomBasicList<SortInfo> SortList, EnumDatabaseCategory category, int HowMany = 0) where E : class, IJoinedEntity where D1:class
+        public static string GetSimpleSelectStatement<E, D1>(bool isOneToOne, CustomBasicList<SortInfo>? sortList, EnumDatabaseCategory category, int howMany = 0) where E : class, IJoinedEntity where D1 : class
         {
-            StartList<E>(out CustomBasicList<DatabaseMapping> ThisList, out CustomBasicList<string> JoinList, out string TableName);
-            AppendList<E, D1>(ThisList, JoinList, "b", IsOneToOne);
-            string sqls = GetSimpleSelectStatement(ThisList, JoinList, TableName, category, HowMany);
-            if (SortList == null)
+            StartList<E>(out CustomBasicList<DatabaseMapping> thisList, out CustomBasicList<string> joinList, out string tableName);
+            AppendList<E, D1>(thisList, joinList, "b", isOneToOne);
+            string sqls = GetSimpleSelectStatement(thisList, joinList, tableName, category, howMany);
+            if (sortList == null)
                 return sqls;
-            StringBuilder ThisStr = new StringBuilder(sqls);
-            ThisStr.Append(GetSortStatement(ThisList, SortList, true));
-            ThisStr.Append(GetLimitSQLite(category, HowMany));
-            return ThisStr.ToString();
-            //return GetSimpleSelectStatement(ThisList, JoinList, TableName);
+            StringBuilder thisStr = new StringBuilder(sqls);
+            thisStr.Append(GetSortStatement(thisList, sortList, true));
+            thisStr.Append(GetLimitSQLite(category, howMany));
+            return thisStr.ToString();
         }
-
-        //has to get some hints.
-
-        //public static string GetSimpleSelectStatement(CustomBasicList<DatabaseMapping> ThisList, string TableName, EnumDatabaseCategory Database, EnumSQLCategory Category = EnumSQLCategory.Normal, int HowMany = 0, string Property = "")
-        //{
-        //    StringBuilder ThisStr = new StringBuilder("select ");
-        //    if (HowMany > 0 && Database == EnumDatabaseCategory.SQLServer) //sqlite requires it at the end.
-        //        ThisStr.Append($"top {HowMany} ");
-        //    if (Category == EnumSQLCategory.Normal && Property == "")
-        //    {
-        //        if (ThisList.TrueForAll(Items => Items.HasMatch == true))
-        //        {
-        //            ThisStr.Append(" * from ");
-        //            ThisStr.Append(TableName);
-        //            return ThisStr.ToString();
-        //        }
-        //        StrCat cats = new StrCat();
-        //        ThisList.ForEach(Items =>
-        //        {
-        //            if (Items.HasMatch == false)
-        //                cats.AddToString($"{Items.DatabaseName} as {Items.ObjectName}", ", ");
-        //            else
-        //                cats.AddToString(Items.DatabaseName, ", ");
-        //        });
-        //        ThisStr.Append(cats.GetInfo());
-        //    }
-        //    else if (Category == EnumSQLCategory.Normal)
-        //    {
-        //        DatabaseMapping ThisMap = ThisList.Where(Items => Items.ObjectName == Property).Single();
-        //        if (ThisMap.HasMatch == false)
-        //            ThisStr.Append($"{ThisMap.DatabaseName} as {ThisMap.ObjectName} ");
-        //        else
-        //            ThisStr.Append($"{ThisMap.DatabaseName} ");
-        //    }
-        //    else if (Category == EnumSQLCategory.Count)
-        //        ThisStr.Append("count (*)");
-        //    else if (Category == EnumSQLCategory.Bool)
-        //        ThisStr.Append("1");
-        //    else if (Category == EnumSQLCategory.Delete)
-        //        throw new BasicBlankException("Deleting is not supposed to get a select statement.  Try delete statement instead");
-        //    else
-        //        throw new BasicBlankException("Not supported");
-        //    ThisStr.Append(" from ");
-        //    ThisStr.Append(TableName);
-        //    return ThisStr.ToString();
-        //}
-
-
-
-        private static string GetSimpleSelectStatement(CustomBasicList<DatabaseMapping> ThisList, CustomBasicList<string> JoinList, string TableName, EnumDatabaseCategory Database, int HowMany = 0) //sqlite requires limit at the end
+        private static string GetSimpleSelectStatement(CustomBasicList<DatabaseMapping> thisList, CustomBasicList<string> joinList, string tableName, EnumDatabaseCategory database, int howMany = 0) //sqlite requires limit at the end
         {
-            if (JoinList.Count == 0)
+            if (joinList.Count == 0)
                 throw new BasicBlankException("Needs at least one other table.  Otherwise, no join");
-            StringBuilder ThisStr = new StringBuilder("select ");
+            StringBuilder thisStr = new StringBuilder("select ");
             StrCat cats = new StrCat();
-            if (HowMany > 0 && Database == EnumDatabaseCategory.SQLServer) //sqlite requires it at the end.
-                ThisStr.Append($"top {HowMany} ");
-            ThisList.ForEach(Items =>
+            if (howMany > 0 && database == EnumDatabaseCategory.SQLServer) //sqlite requires it at the end.
+                thisStr.Append($"top {howMany} ");
+            thisList.ForEach(items =>
             {
-                if (Items.HasMatch == false)
-                    cats.AddToString($"{Items.Prefix}.{Items.DatabaseName} as {Items.ObjectName}", ", ");
+                if (items.HasMatch == false)
+                    cats.AddToString($"{items.Prefix}.{items.DatabaseName} as {items.ObjectName}", ", ");
                 else
-                    cats.AddToString($"{Items.Prefix}.{Items.DatabaseName}", ", ");
+                    cats.AddToString($"{items.Prefix}.{items.DatabaseName}", ", ");
             });
-            ThisStr.Append(cats.GetInfo());
-            ThisStr.Append(" from ");
-            ThisStr.Append(TableName);
-            ThisStr.Append(" a left join ");
+            thisStr.Append(cats.GetInfo());
+            thisStr.Append(" from ");
+            thisStr.Append(tableName);
+            thisStr.Append(" a left join ");
             cats = new StrCat();
-            JoinList.ForEach(Items => cats.AddToString(Items, " left join "));
-            ThisStr.Append(cats.GetInfo());
-            return ThisStr.ToString();
+            joinList.ForEach(Items => cats.AddToString(Items, " left join "));
+            thisStr.Append(cats.GetInfo());
+            return thisStr.ToString();
         }
         #endregion
-
         #region With Conditions
         //i am guessing that more gets added when it has conditions. so should be no need for repeating.
-
-        //hard to figure out how to do it without repeating myself because there are a few differences.
-        //we have 2 and 3.  this means for this part, has to see if i can rethink.
-
-        private static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) FinishConditionStatement (CustomBasicList<DatabaseMapping> MapList, CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList, StringBuilder ThisStr, EnumDatabaseCategory category, int HowMany = 0)
+        private static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) FinishConditionStatement(CustomBasicList<DatabaseMapping> mapList, CustomBasicList<ICondition> conditionList, CustomBasicList<SortInfo>? sortList, StringBuilder thisStr, EnumDatabaseCategory category, int howMany = 0)
         {
-
-            var ParamList = new CustomBasicList<DatabaseMapping>();
-            ThisStr.Append(" Where ");
-            CustomBasicList<AndCondition> AndList = ConditionList.Where(Items => Items.ConditionCategory == EnumConditionCategory.And).ToCastedList<AndCondition>();
-            Dictionary<string, int> ThisDict = new Dictionary<string, int>();
-            //for now, has to see what i expect and do unit tests on it.
-            //for now, use all.  can change later if necessary.
-            bool NeedsAppend;
-            if (AndList.Count > 0)
-                NeedsAppend = true;
+            var paramList = new CustomBasicList<DatabaseMapping>();
+            thisStr.Append(" Where ");
+            CustomBasicList<AndCondition> andList = conditionList.Where(items => items.ConditionCategory == EnumConditionCategory.And).ToCastedList<AndCondition>();
+            Dictionary<string, int> thisDict = new Dictionary<string, int>();
+            bool needsAppend;
+            if (andList.Count > 0)
+                needsAppend = true;
             else
-                NeedsAppend = false;
-            ThisStr.Append(PopulatAnds(AndList, MapList, " and ", ParamList, ThisDict));
-            CustomBasicList<OrCondition> OrList = ConditionList.Where(Items => Items.ConditionCategory == EnumConditionCategory.Or).ToCastedList<OrCondition>();
+                needsAppend = false;
+            thisStr.Append(PopulatAnds(andList, mapList, " and ", paramList, thisDict));
+            CustomBasicList<OrCondition> orList = conditionList.Where(items => items.ConditionCategory == EnumConditionCategory.Or).ToCastedList<OrCondition>();
             StrCat cats = new StrCat();
-            if (OrList.Count > 0)
+            if (orList.Count > 0)
             {
-                if (NeedsAppend == true)
-                    ThisStr.Append(" and ");
-                NeedsAppend = true;
-                ThisStr.Append("(");
-                OrList.ForEach(Items => cats.AddToString(PopulatAnds(Items.ConditionList, MapList, " or ", ParamList, ThisDict), ") and ("));
-                ThisStr.Append(cats.GetInfo());
-                ThisStr.Append(")");
+                if (needsAppend == true)
+                    thisStr.Append(" and ");
+                needsAppend = true;
+                thisStr.Append("(");
+                orList.ForEach(items => cats.AddToString(PopulatAnds(items.ConditionList, mapList, " or ", paramList, thisDict), ") and ("));
+                thisStr.Append(cats.GetInfo());
+                thisStr.Append(")");
             }
-            CustomBasicList<SpecificListCondition> IncludeList = ConditionList.Where(Items => Items.ConditionCategory == EnumConditionCategory.ListInclude).ToCastedList<SpecificListCondition>();
-            if (IncludeList.Count > 1)
+            CustomBasicList<SpecificListCondition> includeList = conditionList.Where(items => items.ConditionCategory == EnumConditionCategory.ListInclude).ToCastedList<SpecificListCondition>();
+            if (includeList.Count > 1)
             {
-                //looks like we could have more than one include list.  the way to fix this is to append and make into one.
-                CustomBasicList<int> NewList = new CustomBasicList<int>();
-                IncludeList.ForEach(Items =>
+                CustomBasicList<int> newList = new CustomBasicList<int>();
+                includeList.ForEach(items =>
                 {
-                    NewList.AddRange(Items.ItemList);
+                    newList.AddRange(items.ItemList);
                 });
-                IncludeList = new CustomBasicList<SpecificListCondition>();
-                SpecificListCondition ThisI = new SpecificListCondition();
-                ThisI.ItemList = NewList;
-                IncludeList.Add(ThisI);
+                includeList = new CustomBasicList<SpecificListCondition>();
+                SpecificListCondition thisI = new SpecificListCondition();
+                thisI.ItemList = newList;
+                includeList.Add(thisI);
             }
-            if (IncludeList.Count == 1)
+            if (includeList.Count == 1)
             {
-                if (NeedsAppend == true)
-                    ThisStr.Append(" and ");
-                NeedsAppend = true;
-                ThisStr.Append("a.ID in (");
-                ThisStr.Append(PopulateListInfo(IncludeList.Single().ItemList));
-                //cats = new StrCat();
-                //IncludeList.Single().ItemList.ForEach(Items => cats.AddToString(Items.ToString(), ", "));
-                //ThisStr.Append(cats.GetInfo());
-                //ThisStr.Append(")");
+                if (needsAppend == true)
+                    thisStr.Append(" and ");
+                needsAppend = true;
+                thisStr.Append("a.ID in (");
+                thisStr.Append(PopulateListInfo(includeList.Single().ItemList));
             }
-            CustomBasicList<NotListCondition> NotList = ConditionList.Where(Items => Items.ConditionCategory == EnumConditionCategory.ListNot).ToCastedList<NotListCondition>();
-            
-            if (NotList.Count == 1)
+            CustomBasicList<NotListCondition> notList = conditionList.Where(items => items.ConditionCategory == EnumConditionCategory.ListNot).ToCastedList<NotListCondition>();
+            if (notList.Count == 1)
             {
-                if (NeedsAppend == true)
-                    ThisStr.Append(" and ");
-                ThisStr.Append("a.ID not in (");
-                ThisStr.Append(PopulateListInfo(NotList.Single().ItemList));
+                if (needsAppend == true)
+                    thisStr.Append(" and ");
+                thisStr.Append("a.ID not in (");
+                thisStr.Append(PopulateListInfo(notList.Single().ItemList));
             }
-            if (SortList != null)
-                ThisStr.Append(GetSortStatement(MapList, SortList, true));
-            ThisStr.Append(GetLimitSQLite(category, HowMany));
-            return (ThisStr.ToString(), ParamList);
-
+            if (sortList != null)
+                thisStr.Append(GetSortStatement(mapList, sortList, true));
+            thisStr.Append(GetLimitSQLite(category, howMany));
+            return (thisStr.ToString(), paramList);
         }
-
-        public static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetConditionalStatement<E, D1>(CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList, bool IsOneToOne, EnumDatabaseCategory category, int HowMany = 0) where E : class, IJoinedEntity where D1 : class
+        public static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetConditionalStatement<E, D1>(CustomBasicList<ICondition> conditionList, CustomBasicList<SortInfo>? sortList, bool isOneToOne, EnumDatabaseCategory category, int howMany = 0) where E : class, IJoinedEntity where D1 : class
         {
-            StringBuilder ThisStr = new StringBuilder();
-            //ThisStr.Append(GetSimpleSelectStatement(MapList, TableName));
-
-            StartList<E>(out CustomBasicList<DatabaseMapping> MapList, out CustomBasicList<string> JoinList, out string TableName);
-            AppendList<E, D1>(MapList, JoinList, "b", IsOneToOne);
-            ThisStr.Append(GetSimpleSelectStatement(MapList, JoinList, TableName, category, HowMany));
-            return FinishConditionStatement(MapList, ConditionList, SortList, ThisStr, category, HowMany);
+            StringBuilder thisStr = new StringBuilder();
+            StartList<E>(out CustomBasicList<DatabaseMapping> mapList, out CustomBasicList<string> joinList, out string tableName);
+            AppendList<E, D1>(mapList, joinList, "b", isOneToOne);
+            thisStr.Append(GetSimpleSelectStatement(mapList, joinList, tableName, category, howMany));
+            return FinishConditionStatement(mapList, conditionList, sortList, thisStr, category, howMany);
         }
-
-        public static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetConditionalStatement<E, D1, D2>(CustomBasicList<ICondition> ConditionList, CustomBasicList<SortInfo> SortList, EnumDatabaseCategory category, int HowMany = 0, bool IsOneToOne = true) where E : class, ISimpleDapperEntity where D1 : class where D2: class
+        public static (string sqls, CustomBasicList<DatabaseMapping> ParameterMappings) GetConditionalStatement<E, D1, D2>(CustomBasicList<ICondition> conditionList, CustomBasicList<SortInfo>? sortList, EnumDatabaseCategory category, int howMany = 0, bool isOneToOne = true) where E : class, ISimpleDapperEntity where D1 : class where D2 : class
         {
-            StringBuilder ThisStr = new StringBuilder();
-            //ThisStr.Append(GetSimpleSelectStatement(MapList, TableName));
-
-            StartList<E>(out CustomBasicList<DatabaseMapping> MapList, out CustomBasicList<string> JoinList, out string TableName);
-            //string OtherTable = GetTableName<D2>();
-            AppendList<E, D1>(MapList, JoinList, "b", IsOneToOne); //this is always a given.
-
+            StringBuilder thisStr = new StringBuilder();
+            StartList<E>(out CustomBasicList<DatabaseMapping> mapList, out CustomBasicList<string> joinList, out string tableName);
+            AppendList<E, D1>(mapList, joinList, "b", isOneToOne); //this is always a given.
             bool rets;
-            string ThisName = typeof(D2).Name;
-            rets = HasJoiner<E>(ThisName); 
-
-            //here needs rethinking.
-            
-            
-
-
+            string thisName = typeof(D2).Name;
+            rets = HasJoiner<E>(thisName);
             if (rets == true)
-            
-                AppendList<E, D2>(MapList, JoinList, "c", true); //try this way (?)
-            //AppendList<E, D2>(MapList, JoinList, "c", IsOneToOne); //not sure.
+            {
+                AppendList<E, D2>(mapList, joinList, "c", true); //try this way (?)
+            }
             else
             {
                 //this means that b is linking to c.
-                AppendList<D1, D2>(MapList, JoinList, "c", true, "b"); //if that changes, rethink
+                AppendList<D1, D2>(mapList, joinList, "c", true, "b"); //if that changes, rethink
             }
-            
-
-
-            ThisStr.Append(GetSimpleSelectStatement(MapList, JoinList, TableName, category, HowMany));
-            return FinishConditionStatement(MapList, ConditionList, SortList, ThisStr, category, HowMany);
+            thisStr.Append(GetSimpleSelectStatement(mapList, joinList, tableName, category, howMany));
+            return FinishConditionStatement(mapList, conditionList, sortList, thisStr, category, howMany);
         }
-
-        private static string PopulateListInfo(CustomBasicList<int> ThisList)
+        private static string PopulateListInfo(CustomBasicList<int> thisList)
         {
             StrCat cats = new StrCat();
-            ThisList.ForEach(Items => cats.AddToString(Items.ToString(), ", "));
-            StringBuilder ThisStr = new StringBuilder();
-            ThisStr.Append(cats.GetInfo());
-            ThisStr.Append(")");
-            return ThisStr.ToString();
+            thisList.ForEach(items => cats.AddToString(items.ToString(), ", "));
+            StringBuilder thisStr = new StringBuilder();
+            thisStr.Append(cats.GetInfo());
+            thisStr.Append(")");
+            return thisStr.ToString();
         }
-
-        private static string PopulatAnds(CustomBasicList<AndCondition> AndList, CustomBasicList<DatabaseMapping> MapList, string Seperator, CustomBasicList<DatabaseMapping> ParamList, Dictionary<string, int> ThisDict)
+        private static string PopulatAnds(CustomBasicList<AndCondition> andList, CustomBasicList<DatabaseMapping> mapList, string seperator, CustomBasicList<DatabaseMapping> paramList, Dictionary<string, int> thisDict)
         {
             StrCat cats = new StrCat();
-            AndList.ForEach(Items =>
+            andList.ForEach(items =>
             {
-                DatabaseMapping ThisMap = FindMappingForProperty(Items, MapList);
-
-                if (Items.Operator == cs.IsNotNull || Items.Operator == cs.IsNull)
+                DatabaseMapping thisMap = FindMappingForProperty(items, mapList);
+                if (items.Operator == cs.IsNotNull || items.Operator == cs.IsNull)
                 {
-                    cats.AddToString($"{ThisMap.Prefix}.{ThisMap.DatabaseName} {Items.Operator}", Seperator); //i am guessing that with parameters no need to worry about the null parts
+                    cats.AddToString($"{thisMap.Prefix}.{thisMap.DatabaseName} {items.Operator}", seperator); //i am guessing that with parameters no need to worry about the null parts
                 }
                 else
                 {
-                    if (Items.Operator == cs.Like)
-                        ThisMap.Like = true;
-                    ParamList.Add(ThisMap); //i think
-                    object RealValue;
-                    if (bool.TryParse(Items.Value.ToString(), out bool NewBool) == false)
-                        RealValue = Items.Value;
+                    if (items.Operator == cs.Like)
+                        thisMap.Like = true;
+                    paramList.Add(thisMap); //i think
+                    object realValue;
+                    if (bool.TryParse(items.Value!.ToString(), out bool NewBool) == false)
+                        realValue = items.Value;
                     else if (NewBool == true)
-                        RealValue = 1;
+                        realValue = 1;
                     else
-                        RealValue = 0;
-                    ThisMap.Value = RealValue;
-                    //cats.AddToString($"{ThisMap.DatabaseName} {Items.Operator} {RealValue}", Seperator);
-                    ThisMap.ObjectName = ThisDict.GetNewValue(ThisMap.DatabaseName);
-
-                    if (Items.Property!= "ID")
-                        cats.AddToString($"{Items.Code}{ThisMap.DatabaseName} {Items.Operator} @{ThisMap.ObjectName}", Seperator);
+                        realValue = 0;
+                    thisMap.Value = realValue;
+                    thisMap.ObjectName = thisDict.GetNewValue(thisMap.DatabaseName);
+                    if (items.Property != "ID")
+                        cats.AddToString($"{items.Code}{thisMap.DatabaseName} {items.Operator} @{thisMap.ObjectName}", seperator);
                     else
-                        cats.AddToString($"{ThisMap.Prefix}.{ThisMap.DatabaseName} {Items.Operator} @{ThisMap.ObjectName}", Seperator);
-                    //if (Items.Operator == cs.Like)
-                    //    cats.AddToString($"{ThisMap.DatabaseName} {Items.Operator} @%{ThisMap.ObjectName}%", Seperator);
-                    //else
-
-                    //cats.AddToString($"{ThisMap.Prefix}.{ThisMap.DatabaseName} {Items.Operator} @{ThisMap.ObjectName}", Seperator);
-
-                    //cats.AddToString($"{ThisMap.DatabaseName} {Items.Operator} @{ThisMap.DatabaseName}", Seperator);
-
-
+                        cats.AddToString($"{thisMap.Prefix}.{thisMap.DatabaseName} {items.Operator} @{thisMap.ObjectName}", seperator);
                 }
-                //for now, has to be this way so i can test the statements.  later will do parameters
-                //
             });
             return cats.GetInfo();
         }
-
         #endregion
-
     }
 }

@@ -1,71 +1,60 @@
-﻿using System;
-using System.Text;
+﻿using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.Misc;
+using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
+using CommonBasicStandardLibraries.DatabaseHelpers.MiscInterfaces;
 using CommonBasicStandardLibraries.Exceptions;
-using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
-using System.Linq;
-using CommonBasicStandardLibraries.BasicDataSettingsAndProcesses;
-using static CommonBasicStandardLibraries.BasicDataSettingsAndProcesses.BasicDataFunctions;
-using CommonBasicStandardLibraries.CollectionClasses;
-using System.Threading.Tasks; //most of the time, i will be using asyncs.
-using fs = CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.JsonSerializers.FileHelpers;
-using js = CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.JsonSerializers.NewtonJsonStrings; //just in case i need those 2.
-using System.Data;
-using System.Data.SQLite;
-using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.Misc;
 using Dapper;
+using System.Data;
+using System.Text;
+using static CommonBasicStandardLibraries.DatabaseHelpers.Extensions.ReflectionDatabase;
 using static DapperHelpersLibrary.MapHelpers.MapBaseHelperClass;
-using static DapperHelpersLibrary.Extensions.ReflectionDatabase;
-using System.Collections.Generic;
-using DapperHelpersLibrary.EntityInterfaces;
-using static DapperHelpersLibrary.SQLHelpers.SimpleStatementHelpers;
-using System.Data.SqlClient;
-using DapperHelpersLibrary.SQLHelpers;
-using DapperHelpersLibrary.ConditionClasses;
-//i think this is the most common things i like to do
 namespace DapperHelpersLibrary.Extensions
 {
     //this is for cases where we don't know what category to put under but are still basic extensions  an example is creating sqlite databases.
     public static class Misc
     {
-
-        internal static EnumDatabaseCategory GetDatabaseCategory(this IDbConnection db)
+        //internal static EnumDatabaseCategory GetDatabaseCategory(this IDbConnection db) //maybe need this (?)
+        //{
+        //    IDbConnector conn = cons!.Resolve<IDbConnector>();
+        //    return conn.GetCategory(db); //this way i can support either via unit testing or not.
+        //    //if (db is SqlConnection)
+        //    //    return EnumDatabaseCategory.SQLServer;
+        //    //else if (db is SQLiteConnection)
+        //    //    return EnumDatabaseCategory.SQLite;
+        //    //throw new BasicBlankException("Only SQL Server And SQLite are supported currently");
+        //}
+        internal static EnumDatabaseCategory GetDatabaseCategory(this IDbConnection db, IDbConnector conn) //maybe need this (?)
         {
-            if (db is SqlConnection)
-                return EnumDatabaseCategory.SQLServer;
-            else if (db is SQLiteConnection)
-                return EnumDatabaseCategory.SQLite;
-            throw new BasicBlankException("Only SQL Server And SQLite are supported currently");
+            return conn.GetCategory(db);
+            //if (db is SqlConnection)
+            //    return EnumDatabaseCategory.SQLServer;
+            //else if (db is SQLiteConnection)
+            //    return EnumDatabaseCategory.SQLite;
+            //throw new BasicBlankException("Only SQL Server And SQLite are supported currently");
         }
-
-        public static void CreateTableSQLite<E>(this IDbConnection db) where E : class
+        public static void CreateTableSQLite<E>(this IDbConnection db, IDbConnector conn) where E : class
         {
-            //this should not use any transactions.  should only be done for testing.
-            if (db is SQLiteConnection == false)
+            EnumDatabaseCategory dcat = conn.GetCategory(db);
+            if (dcat != EnumDatabaseCategory.SQLite)
                 throw new BasicBlankException("Currently, Only SQLite can create tables since the variable types will be all strings");
-
-            var ThisList = GetMappingList<E>(out string TableName);
+            var thisList = GetMappingList<E>(out string TableName);
             //return "create table TestSong (ID integer primary key autoincrement, Name string, Value integer)";
-            if (ThisList.Exists(Items => Items.DatabaseName.ToUpper() == "ID") == false)
+            if (thisList.Exists(Items => Items.DatabaseName.ToUpper() == "ID") == false)
                 throw new BasicBlankException("You must have ID in order to create table  Its needed for the primary key part");
             string sqls;
             StrCat cats = new StrCat();
-            StringBuilder ThisStr = new StringBuilder("create table ");
-            ThisStr.Append(TableName);
-            bool AutoIncrementID = IsAutoIncremented<E>();
-            if (AutoIncrementID == true)
-                ThisStr.Append(" (ID integer primary key autoincrement, ");
+            StringBuilder thisStr = new StringBuilder("create table ");
+            thisStr.Append(TableName);
+            bool autoIncrementID = IsAutoIncremented<E>();
+            if (autoIncrementID == true)
+                thisStr.Append(" (ID integer primary key autoincrement, ");
             else
-                ThisStr.Append(" (ID integer primary key, ");
-            ThisList.RemoveAllOnly(Items => Items.DatabaseName.ToLower() == "id"); //its okay to remove id because its already handled anyways.
-            ThisList.ForEach(Items => cats.AddToString($"{Items.DatabaseName} {Items.GetDataType()}", ", "));
-            ThisStr.Append(cats.GetInfo());
-            ThisStr.Append(")");
-            sqls = ThisStr.ToString();
+                thisStr.Append(" (ID integer primary key, ");
+            thisList.RemoveAllOnly(Items => Items.DatabaseName.ToLower() == "id"); //its okay to remove id because its already handled anyways.
+            thisList.ForEach(Items => cats.AddToString($"{Items.DatabaseName} {Items.GetDataType()}", ", "));
+            thisStr.Append(cats.GetInfo());
+            thisStr.Append(")");
+            sqls = thisStr.ToString();
             db.Execute(sqls);
         }
-
-        
-
-
     }
 }
