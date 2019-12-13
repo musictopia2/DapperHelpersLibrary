@@ -13,9 +13,10 @@ using System.Data;
 using System.Threading.Tasks; //most of the time, i will be using asyncs.
 using static CommonBasicStandardLibraries.BasicDataSettingsAndProcesses.BasicDataFunctions;
 using static DapperHelpersLibrary.SQLHelpers.StatementFactoryUpdates;
+using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
 namespace DapperHelpersLibrary
 {
-    public class ConnectionHelper
+    public class ConnectionHelper : ISqliteManuelDataAccess, ISqlServerManuelDataAccess
     {
         //no more static functions because its now part of common functions.
         #region Main Functions
@@ -458,6 +459,74 @@ namespace DapperHelpersLibrary
         {
             using IDbConnection cons = GetConnection();
             return await cons.GetAsync<E, D1, D2>(conditionList, _connection, sortList, howMany);
+        }
+        //decided that this only works via interface.  probably best to keep it separate.
+        CustomBasicList<T> ISqliteManuelDataAccess.LoadData<T, U>(string sqlStatement, U parameters, string connectionStringName)
+        {
+            using IDbConnection conn = GetConnection();
+            CustomBasicList<T> rows = conn.Query<T>(sqlStatement, parameters).ToCustomBasicList();
+            return rows;
+        }
+        async Task<CustomBasicList<T>> ISqliteManuelDataAccess.LoadDataAsync<T,  U>(string sqlStatement, U parameters, string connectionStringName)
+        {
+            using IDbConnection conn = GetConnection();
+            var rows = await conn.QueryAsync<T>(sqlStatement, parameters);
+            return rows.ToCustomBasicList();
+        }
+        void ISqliteManuelDataAccess.SaveData<T>(string sqlStatement, T parameters, string connectionStringName)
+        {
+            using IDbConnection conn = GetConnection();
+            conn.Execute(sqlStatement, parameters);
+        }
+        async Task ISqliteManuelDataAccess.SaveDataAsync<T>(string sqlStatement, T parameters, string connectionStringName)
+        {
+            using IDbConnection conn = GetConnection();
+            await conn.ExecuteAsync(sqlStatement, parameters);
+        }
+        CustomBasicList<T> ISqlServerManuelDataAccess.LoadData<T, U>(string sqlStatement, U parameters, string connectionStringName, bool isStoredProcedure)
+        {
+            using IDbConnection conn = GetConnection();
+            CommandType commandType = CommandType.Text;
+            if (isStoredProcedure == true)
+            {
+                commandType = CommandType.StoredProcedure;
+            }
+            CustomBasicList<T> rows = conn.Query<T>(sqlStatement, parameters, commandType: commandType).ToCustomBasicList();
+            return rows;
+        }
+        async Task<CustomBasicList<T>> ISqlServerManuelDataAccess.LoadDataAsync<T, U>(string sqlStatement, U parameters, string connectionStringName, bool isStoredProcedure)
+        {
+            using IDbConnection conn = GetConnection();
+            CommandType commandType = CommandType.Text;
+            if (isStoredProcedure == true)
+            {
+                commandType = CommandType.StoredProcedure;
+            }
+            var rows = await conn.QueryAsync<T>(sqlStatement, parameters, commandType: commandType);
+            return rows.ToCustomBasicList();
+
+        }
+        //sql server portion
+        void ISqlServerManuelDataAccess.SaveData<T>(string sqlStatement, T parameters, string connectionStringName, bool isStoredProcedure)
+        {
+            using IDbConnection conn = GetConnection();
+            CommandType commandType = CommandType.Text;
+            if (isStoredProcedure == true)
+            {
+                commandType = CommandType.StoredProcedure;
+            }
+            conn.Execute(sqlStatement, parameters, commandType: commandType);
+        }
+
+        async Task ISqlServerManuelDataAccess.SaveDataAsync<T>(string sqlStatement, T parameters, string connectionStringName, bool isStoredProcedure)
+        {
+            using IDbConnection conn = GetConnection();
+            CommandType commandType = CommandType.Text;
+            if (isStoredProcedure == true)
+            {
+                commandType = CommandType.StoredProcedure;
+            }
+            await conn.ExecuteAsync(sqlStatement, parameters, commandType: commandType);
         }
         #endregion
     }
