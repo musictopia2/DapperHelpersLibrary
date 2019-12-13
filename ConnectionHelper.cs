@@ -462,29 +462,30 @@ namespace DapperHelpersLibrary
             return await cons.GetAsync<E, D1, D2>(conditionList, GetConnector, sortList, howMany);
         }
         //decided that this only works via interface.  probably best to keep it separate.
-        CustomBasicList<T> ISqliteManuelDataAccess.LoadData<T, U>(string sqlStatement, U parameters, string connectionStringName)
+        //changed my mind because sometimes i just want to do directly.
+        public CustomBasicList<T> LoadData<T, U>(string sqlStatement, U parameters)
         {
             using IDbConnection conn = GetConnection();
             CustomBasicList<T> rows = conn.Query<T>(sqlStatement, parameters).ToCustomBasicList();
             return rows;
         }
-        async Task<CustomBasicList<T>> ISqliteManuelDataAccess.LoadDataAsync<T,  U>(string sqlStatement, U parameters, string connectionStringName)
+        public async Task<CustomBasicList<T>> LoadDataAsync<T,  U>(string sqlStatement, U parameters)
         {
             using IDbConnection conn = GetConnection();
             var rows = await conn.QueryAsync<T>(sqlStatement, parameters);
             return rows.ToCustomBasicList();
         }
-        void ISqliteManuelDataAccess.SaveData<T>(string sqlStatement, T parameters, string connectionStringName)
+        public void SaveData<T>(string sqlStatement, T parameters)
         {
             using IDbConnection conn = GetConnection();
             conn.Execute(sqlStatement, parameters);
         }
-        async Task ISqliteManuelDataAccess.SaveDataAsync<T>(string sqlStatement, T parameters, string connectionStringName)
+        public async Task SaveDataAsync<T>(string sqlStatement, T parameters)
         {
             using IDbConnection conn = GetConnection();
             await conn.ExecuteAsync(sqlStatement, parameters);
         }
-        CustomBasicList<T> ISqlServerManuelDataAccess.LoadData<T, U>(string sqlStatement, U parameters, string connectionStringName, bool isStoredProcedure)
+        public CustomBasicList<T> LoadData<T, U>(string sqlStatement, U parameters, bool isStoredProcedure)
         {
             using IDbConnection conn = GetConnection();
             CommandType commandType = CommandType.Text;
@@ -495,7 +496,7 @@ namespace DapperHelpersLibrary
             CustomBasicList<T> rows = conn.Query<T>(sqlStatement, parameters, commandType: commandType).ToCustomBasicList();
             return rows;
         }
-        async Task<CustomBasicList<T>> ISqlServerManuelDataAccess.LoadDataAsync<T, U>(string sqlStatement, U parameters, string connectionStringName, bool isStoredProcedure)
+        public async Task<CustomBasicList<T>> LoadDataAsync<T, U>(string sqlStatement, U parameters, bool isStoredProcedure)
         {
             using IDbConnection conn = GetConnection();
             CommandType commandType = CommandType.Text;
@@ -508,7 +509,7 @@ namespace DapperHelpersLibrary
 
         }
         //sql server portion
-        void ISqlServerManuelDataAccess.SaveData<T>(string sqlStatement, T parameters, string connectionStringName, bool isStoredProcedure)
+        public void SaveData<T>(string sqlStatement, T parameters, bool isStoredProcedure)
         {
             using IDbConnection conn = GetConnection();
             CommandType commandType = CommandType.Text;
@@ -518,8 +519,7 @@ namespace DapperHelpersLibrary
             }
             conn.Execute(sqlStatement, parameters, commandType: commandType);
         }
-
-        async Task ISqlServerManuelDataAccess.SaveDataAsync<T>(string sqlStatement, T parameters, string connectionStringName, bool isStoredProcedure)
+        public async Task SaveDataAsync<T>(string sqlStatement, T parameters, bool isStoredProcedure)
         {
             using IDbConnection conn = GetConnection();
             CommandType commandType = CommandType.Text;
