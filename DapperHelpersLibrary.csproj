@@ -13,7 +13,6 @@ Even has many ways to be smart about updating.  Even allows multiple tables incl
     <Version>2.0.00</Version><!--could have breaking changes now.  since this uses 2.1, will never work on old fashioned .net framework again.  -->
   </PropertyGroup>
   <ItemGroup>
-	<!-- decided to risk some other things including the brand new sqlclient that is talked about as well. -->
     <PackageReference Include="Dapper" Version="2.0.30" />
   </ItemGroup>
   <ItemGroup>

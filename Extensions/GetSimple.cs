@@ -207,10 +207,12 @@ namespace DapperHelpersLibrary.Extensions
             return thisTemp;
         }
         internal static E PrivateGetOneToMany<E, D1, D2>(E main, D1 detail1, D2 detail2, Action<E, D1, D2>? action, Dictionary<int, E> thisDict) where E : class, IJoin3Entity<D1, D2>
+            where D1: class
+            where D2: class
         {
             if (detail1 == null)
             {
-                action?.Invoke(main, detail1, detail2);
+                action?.Invoke(main, detail1!, detail2);
                 return main;
             }
             bool had = false;
