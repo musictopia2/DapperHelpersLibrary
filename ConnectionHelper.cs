@@ -48,18 +48,20 @@ namespace DapperHelpersLibrary
             SetUpStandard(category, key, config);
             GetConnector = cons!.Resolve<IDbConnector>(); //risk doing it this way now.
         }
-        public ConnectionHelper(string key, ISimpleConfig config, Func<Task<EnumDatabaseCategory>> functs)
+        public ConnectionHelper(ISimpleConfig config, Func<EnumDatabaseCategory, string> key, Func<Task<EnumDatabaseCategory>> functs)
         {
             if (_isTesting == true)
                 throw new BasicBlankException("You already decided to test this");
 
-            SetUpStandard(key, config, functs);
+            SetUpStandard(config, key, functs);
             GetConnector = cons!.Resolve<IDbConnector>(); //risk doing it this way now.
         }
-        private async void SetUpStandard(string key, ISimpleConfig config, Func<Task<EnumDatabaseCategory>> functs)
+        private async void SetUpStandard(ISimpleConfig config, Func<EnumDatabaseCategory, string> key, Func<Task<EnumDatabaseCategory>> functs)
         {
-            _connectionString = await config.GetStringAsync(key);
-            _category = await functs();
+            _category = await functs(); //the category first.  that will determine the key as well.
+            string temps = key(_category);
+            _connectionString = await config.GetStringAsync(temps);
+            
         }
         private async void SetUpStandard(EnumDatabaseCategory category, string key, ISimpleConfig config)
         {
@@ -257,6 +259,20 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             cons.UpdateEntity(thisEntity, EnumUpdateCategory.Common);
         }
+        public async Task InsertRangeAsync<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
+        {
+            await DoWorkAsync(async (cons, tran) =>
+            {
+                await cons.InsertRangeAsync(insertList, tran, GetConnector);
+            }, isolationLevel);
+        }
+        public void InsertRange<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
+        {
+            DoWork((cons, tran) =>
+            {
+                cons.InsertRange(insertList, tran, GetConnector);
+            }, isolationLevel);
+        }
         #endregion
         #region Direct To Extensions Except Get
         public async Task AddListOnlyAsync<E>(CustomBasicList<E> addList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
@@ -337,6 +353,9 @@ namespace DapperHelpersLibrary
         #endregion
         #region Direct To Extensions For Getting
         //this is when you only need to get something and do nothing else.
+
+       
+
         public R GetSingleObject<E, R>(string property, CustomBasicList<SortInfo> sortList, CustomBasicList<ICondition>? conditions = null) where E : class, ISimpleDapperEntity
         {
             using IDbConnection cons = GetConnection();

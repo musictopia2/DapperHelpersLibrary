@@ -27,13 +27,14 @@ namespace DapperHelpersLibrary
         //protected abstract void SetUp();
         public BasicMultiDatabaseClass(ISimpleConfig config)
         {
-            Helps = new ConnectionHelper(Key, config, GetDatabaseCategoryAsync);
+            Helps = new ConnectionHelper(config, CalculateKey, GetDatabaseCategoryAsync);
             Connector = Helps.GetConnector;
         }
         
         protected IDbConnector Connector { get; } //not sure (?)
-        protected abstract string Key { get; }
+        //protected abstract string Key { get; }
         protected abstract Task<EnumDatabaseCategory> GetDatabaseCategoryAsync();
         protected ConnectionHelper? Helps;
+        protected abstract string CalculateKey(EnumDatabaseCategory category);
     }
 }
