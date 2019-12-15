@@ -272,6 +272,16 @@ namespace DapperHelpersLibrary
                 await cons.InsertRangeAsync(insertList, tran, GetConnector);
             }, isolationLevel);
         }
+        public async Task InsertAsync<E>(E entity) where E: class, ISimpleDapperEntity
+        {
+            using IDbConnection cons = GetConnection();
+            await cons.InsertSingleAsync(entity, GetConnector); //this will not use transaction.  otherwise, will use another method.
+        }
+        public void Insert<E>(E entity) where E : class, ISimpleDapperEntity
+        {
+            using IDbConnection cons = GetConnection();
+            cons.InsertSingle(entity, GetConnector);
+        }
         public void InsertRange<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified, bool isStarterData = false) where E : class, ISimpleDapperEntity
         {
             DoWork((cons, tran) =>
