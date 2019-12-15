@@ -1,4 +1,6 @@
-﻿using CommonBasicStandardLibraries.BasicDataSettingsAndProcesses;
+﻿using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
+using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.ConfigProcesses;
+using CommonBasicStandardLibraries.BasicDataSettingsAndProcesses;
 using CommonBasicStandardLibraries.CollectionClasses;
 using CommonBasicStandardLibraries.DatabaseHelpers.ConditionClasses;
 using CommonBasicStandardLibraries.DatabaseHelpers.EntityInterfaces;
@@ -13,7 +15,6 @@ using System.Data;
 using System.Threading.Tasks; //most of the time, i will be using asyncs.
 using static CommonBasicStandardLibraries.BasicDataSettingsAndProcesses.BasicDataFunctions;
 using static DapperHelpersLibrary.SQLHelpers.StatementFactoryUpdates;
-using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
 namespace DapperHelpersLibrary
 {
     public class ConnectionHelper : ISqliteManuelDataAccess, ISqlServerManuelDataAccess
@@ -21,29 +22,54 @@ namespace DapperHelpersLibrary
         //no more static functions because its now part of common functions.
         #region Main Functions
         //this only supports sql server and sqlite for now.
-        private readonly EnumDatabaseCategory _category;
-        private readonly string _connectionString;
+        private EnumDatabaseCategory _category;
+        private string _connectionString = "";
         public static ConnectionHelper GetSQLiteTestHelper()
         {
             return new ConnectionHelper();
         }
         private ConnectionHelper()
         {
-            IsTesting = true;
+            _isTesting = true;
             _connectionString = GetInMemorySQLiteString();
             _category = EnumDatabaseCategory.SQLite; //only sqlite can be used for testing
             GetConnector = cons!.Resolve<IDbConnector>();
         }
-        private readonly bool IsTesting;
+        private readonly bool _isTesting;
         private string GetInMemorySQLiteString()
         {
             return "Data Source=:memory:";
         }
-        public IDbConnector GetConnector { get; } //i guess this is fine.
+        public IDbConnector GetConnector { get; private set; } //i guess this is fine.
+        public ConnectionHelper(EnumDatabaseCategory category, string key, ISimpleConfig config)
+        {
+            if (_isTesting == true)
+                throw new BasicBlankException("You already decided to test this");
+            SetUpStandard(category, key, config);
+            GetConnector = cons!.Resolve<IDbConnector>(); //risk doing it this way now.
+        }
+        public ConnectionHelper(string key, ISimpleConfig config, Func<Task<EnumDatabaseCategory>> functs)
+        {
+            if (_isTesting == true)
+                throw new BasicBlankException("You already decided to test this");
 
+            SetUpStandard(key, config, functs);
+            GetConnector = cons!.Resolve<IDbConnector>(); //risk doing it this way now.
+        }
+        private async void SetUpStandard(string key, ISimpleConfig config, Func<Task<EnumDatabaseCategory>> functs)
+        {
+            _connectionString = await config.GetStringAsync(key);
+            _category = await functs();
+        }
+        private async void SetUpStandard(EnumDatabaseCategory category, string key, ISimpleConfig config)
+        {
+            _connectionString = await config.GetStringAsync(key);
+            _category = category;
+        }
+        
         public ConnectionHelper(EnumDatabaseCategory category, string pathOrDatabaseName)
         {
-            if (IsTesting == true)
+            if (_isTesting == true)
                 throw new BasicBlankException("You already decided to test this");
             if (category == EnumDatabaseCategory.SQLServer)
             {
@@ -63,14 +89,14 @@ namespace DapperHelpersLibrary
             {
                 IDbConnection output = GetConnector.GetConnection(EnumDatabaseCategory.SQLite, _connectionString);
                 //IDbConnection output = new SQLiteConnection(ConnectionString);
-                if (IsTesting == true)
+                if (_isTesting == true)
                     output.Open(); //for testing, has to open connection.
                 output.Dispose(); //i think.
                 return GetConnector.GetConnection(EnumDatabaseCategory.SQLite, _connectionString);
             }
             else if (_category == EnumDatabaseCategory.SQLServer)
             {
-                if (IsTesting == true)
+                if (_isTesting == true)
                     throw new BasicBlankException("You can't be testing on a sql server database");
                 return GetConnector.GetConnection(EnumDatabaseCategory.SQLServer, _connectionString);
             }
@@ -469,7 +495,7 @@ namespace DapperHelpersLibrary
             CustomBasicList<T> rows = conn.Query<T>(sqlStatement, parameters).ToCustomBasicList();
             return rows;
         }
-        public async Task<CustomBasicList<T>> LoadDataAsync<T,  U>(string sqlStatement, U parameters)
+        public async Task<CustomBasicList<T>> LoadDataAsync<T, U>(string sqlStatement, U parameters)
         {
             using IDbConnection conn = GetConnection();
             var rows = await conn.QueryAsync<T>(sqlStatement, parameters);
