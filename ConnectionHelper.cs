@@ -259,17 +259,29 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             cons.UpdateEntity(thisEntity, EnumUpdateCategory.Common);
         }
-        public async Task InsertRangeAsync<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
+        public async Task InsertRangeAsync<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified, bool isStarterData = false) where E : class, ISimpleDapperEntity
         {
             await DoWorkAsync(async (cons, tran) =>
             {
+                if (isStarterData)
+                {
+                    int count = cons.Count<E>(GetConnector, tran);
+                    if (count > 0)
+                        return; //because already exist.
+                }
                 await cons.InsertRangeAsync(insertList, tran, GetConnector);
             }, isolationLevel);
         }
-        public void InsertRange<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
+        public void InsertRange<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified, bool isStarterData = false) where E : class, ISimpleDapperEntity
         {
             DoWork((cons, tran) =>
             {
+                if (isStarterData)
+                {
+                    int count = cons.Count<E>(GetConnector, tran);
+                    if (count > 0)
+                        return; //because already exist.
+                }
                 cons.InsertRange(insertList, tran, GetConnector);
             }, isolationLevel);
         }
