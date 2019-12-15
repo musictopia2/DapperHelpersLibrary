@@ -30,7 +30,7 @@ namespace DapperHelpersLibrary
             Helps = new ConnectionHelper(config, CalculateKey, GetDatabaseCategoryAsync);
             Connector = Helps.GetConnector;
         }
-        
+        protected EnumDatabaseCategory DatabaseCategory => Helps!.Category; //so i have the option to make decisions based on database used.
         protected IDbConnector Connector { get; } //not sure (?)
         //protected abstract string Key { get; }
         protected abstract Task<EnumDatabaseCategory> GetDatabaseCategoryAsync();
