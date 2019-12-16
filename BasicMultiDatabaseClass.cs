@@ -25,8 +25,12 @@ namespace DapperHelpersLibrary
         /// this is intended to be async void.  its useful so you can do async on new.  otherwise, can't do async on new.
         /// </summary>
         //protected abstract void SetUp();
+
+        protected ISimpleConfig Config; //has to be here.  otherwise timing and by the time the base one is called, too late.
+        
         public BasicMultiDatabaseClass(ISimpleConfig config)
         {
+            Config = config;
             Helps = new ConnectionHelper(config, CalculateKey, GetDatabaseCategoryAsync);
             Connector = Helps.GetConnector;
         }

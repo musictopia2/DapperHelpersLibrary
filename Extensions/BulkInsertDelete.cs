@@ -48,10 +48,10 @@ namespace DapperHelpersLibrary.Extensions
         }
         public static async Task InsertRangeAsync<E>(this IDbConnection db, CustomBasicList<E> thisList, IDbTransaction thisTran, IDbConnector conn, int? connectionTimeOut = null) where E : class, ISimpleDapperEntity
         {
-            EnumDatabaseCategory Category = db.GetDatabaseCategory(conn);
+            EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             await thisList.ForEachAsync(async Items =>
             {
-                var ThisData = GetDapperInsert(Category, Items);
+                var ThisData = GetDapperInsert(category, Items);
                 Items.ID = await db.PrivateInsertBulkAsync(ThisData, thisTran, connectionTimeOut);
             });
         }

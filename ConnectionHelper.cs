@@ -94,6 +94,7 @@ namespace DapperHelpersLibrary
                 if (_isTesting == true)
                     output.Open(); //for testing, has to open connection.
                 output.Dispose(); //i think.
+                //CommonBasicStandardLibraries.BasicDataSettingsAndProcesses.VBCompat.Stop();
                 return GetConnector.GetConnection(EnumDatabaseCategory.SQLite, _connectionString);
             }
             else if (Category == EnumDatabaseCategory.SQLServer)
@@ -259,7 +260,7 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             cons.UpdateEntity(thisEntity, EnumUpdateCategory.Common);
         }
-        public async Task InsertRangeAsync<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified, bool isStarterData = false) where E : class, ISimpleDapperEntity
+        public async Task InsertRangeAsync<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified, bool isStarterData = false, Action? recordsExisted = null) where E : class, ISimpleDapperEntity
         {
             await DoWorkAsync(async (cons, tran) =>
             {
@@ -267,9 +268,14 @@ namespace DapperHelpersLibrary
                 {
                     int count = cons.Count<E>(GetConnector, tran);
                     if (count > 0)
+                    {
+                        recordsExisted?.Invoke(); //so a process can do something to show records already existed.
                         return; //because already exist.
+
+                    }
                 }
                 await cons.InsertRangeAsync(insertList, tran, GetConnector);
+                tran.Commit(); //maybe forgot this part (?)
             }, isolationLevel);
         }
         public async Task InsertAsync<E>(E entity) where E: class, ISimpleDapperEntity
