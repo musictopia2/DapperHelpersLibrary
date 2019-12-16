@@ -23,9 +23,9 @@ namespace DapperHelpersLibrary.Extensions
             IEnumerable<E> results = db.PrivateGetSingleItem<E>(id, conn, thisTran, connectionTimeOut);
             return results.Single();
         }
-        public static IEnumerable<E> Get<E>(this IDbConnection db, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, int HowMany = 0, IDbTransaction? ThisTran = null, int? ConnectionTimeOut = null) where E : class
+        public static IEnumerable<E> Get<E>(this IDbConnection db, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, int howMany = 0, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
         {
-            return db.PrivateSimpleSelectAll<E>(sortList, conn, HowMany, ThisTran, ConnectionTimeOut);
+            return db.PrivateSimpleSelectAll<E>(sortList, conn, howMany, thisTran, connectionTimeOut);
         }
         public async static Task<E> GetAsync<E>(this IDbConnection db, int id, IDbConnector conn, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
         {

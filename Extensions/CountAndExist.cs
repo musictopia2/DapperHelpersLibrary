@@ -41,10 +41,10 @@ namespace DapperHelpersLibrary.Extensions
             PopulateSimple(ParameterMappings, thisData, EnumCategory.Conditional);
             return db.ExecuteScalar<bool>(sqls, thisData.Parameters, thisTran, connectionTimeOut);
         }
-        public static bool Exists<E>(this IDbConnection db, int ID, IDbConnector conn, IDbTransaction? ThisTran = null, int? ConnectionTimeOut = null) where E : class
+        public static bool Exists<E>(this IDbConnection db, int id, IDbConnector conn, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
         {
-            CustomBasicList<ICondition> ThisList = StartConditionWithID(ID);
-            return db.Exists<E>(ThisList, conn, ThisTran, ConnectionTimeOut);
+            CustomBasicList<ICondition> ThisList = StartConditionWithID(id);
+            return db.Exists<E>(ThisList, conn, thisTran, connectionTimeOut);
         }
     }
 }
