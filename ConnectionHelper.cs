@@ -278,15 +278,15 @@ namespace DapperHelpersLibrary
                 tran.Commit(); //maybe forgot this part (?)
             }, isolationLevel);
         }
-        public async Task InsertAsync<E>(E entity) where E: class, ISimpleDapperEntity
+        public async Task<int> InsertAsync<E>(E entity) where E: class, ISimpleDapperEntity
         {
             using IDbConnection cons = GetConnection();
-            await cons.InsertSingleAsync(entity, GetConnector); //this will not use transaction.  otherwise, will use another method.
-        }
-        public void Insert<E>(E entity) where E : class, ISimpleDapperEntity
+            return await cons.InsertSingleAsync(entity, GetConnector); //this will not use transaction.  otherwise, will use another method.
+        } //this means i need a new version of this now.
+        public int Insert<E>(E entity) where E : class, ISimpleDapperEntity
         {
             using IDbConnection cons = GetConnection();
-            cons.InsertSingle(entity, GetConnector);
+            return cons.InsertSingle(entity, GetConnector);
         }
         public void InsertRange<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified, bool isStarterData = false) where E : class, ISimpleDapperEntity
         {
