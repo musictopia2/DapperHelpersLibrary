@@ -2,9 +2,9 @@
 using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.Misc;
 using CommonBasicStandardLibraries.CollectionClasses;
 using CommonBasicStandardLibraries.DatabaseHelpers.ConditionClasses;
+using CommonBasicStandardLibraries.DatabaseHelpers.Extensions;
 using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
 using CommonBasicStandardLibraries.Exceptions;
-using DapperHelpersLibrary.Extensions;
 using DapperHelpersLibrary.MapHelpers;
 using System.Collections.Generic;
 using System.Linq;
