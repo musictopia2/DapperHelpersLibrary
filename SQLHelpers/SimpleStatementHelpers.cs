@@ -40,7 +40,9 @@ namespace DapperHelpersLibrary.SQLHelpers
                 if (category == EnumDatabaseCategory.SQLite)
                     thisStr.Append("; SELECT last_insert_rowid()"); //hopefully this works with sql server. if not, rethink
                 else if (category == EnumDatabaseCategory.SQLServer)
-                    thisStr.Append("; SELECT CAST(SCOPE_IDENTITY()  AS BIGINT) AS [id]");
+                    thisStr.Append("; SELECT CAST(SCOPE_IDENTITY()  AS BIGINT) AS [id]"); //hopefully mysql is the same.  if not, needs to know how that is done then.
+                else if (category == EnumDatabaseCategory.MySQL)
+                    thisStr.Append("; SELECT LAST_INSERT_ID();");
                 else
                     throw new BasicBlankException("Not Supported");
             }
