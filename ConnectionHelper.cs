@@ -103,9 +103,17 @@ namespace DapperHelpersLibrary
                     throw new BasicBlankException("You can't be testing on a sql server database");
                 return GetConnector.GetConnection(EnumDatabaseCategory.SQLServer, _connectionString);
             }
+            else if (Category == EnumDatabaseCategory.MySQL)
+            {
+                if (_isTesting == true)
+                {
+                    throw new BasicBlankException("You can't be testing on mySQL database");
+                }
+                return GetConnector.GetConnection(EnumDatabaseCategory.MySQL, _connectionString);
+            }
             else
             {
-                throw new BasicBlankException("Only SQL Server And SQLite Databases Are Currently Supported");
+                throw new BasicBlankException("Only SQL Server, SQLite, and MySQL Databases Are Currently Supported");
             }
         }
         #endregion
