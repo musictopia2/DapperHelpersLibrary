@@ -10,11 +10,15 @@
 Allows advanced searching and sorting and crud functions.
 Maps to tables and columns via attributes.
 Even has many ways to be smart about updating.  Even allows multiple tables include one to many joins with up to 3 tables.</Description>
-    <Version>2.0.2</Version>
+    <Version>2.0.3</Version>
     <!--could have breaking changes now.  since this uses 2.1, will never work on old fashioned .net framework again.  -->
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CommonBasicStandardLibraries" Version="2.0.4" />
     <PackageReference Include="Dapper" Version="2.0.30" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="CommonBasicStandardLibraries">
+      <HintPath>..\CommonBasicStandardLibraries\bin\Release\netstandard2.1\CommonBasicStandardLibraries.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

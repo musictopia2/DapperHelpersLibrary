@@ -263,10 +263,21 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             await cons.UpdateEntityAsync(thisEntity, EnumUpdateCategory.Common);
         }
+        
+        public async Task UpdateAllAsync<E>(E thisEntity) where E : class, ISimpleDapperEntity
+        {
+            using IDbConnection cons = GetConnection();
+            await cons.UpdateEntityAsync(thisEntity, EnumUpdateCategory.All);
+        }
         public void UpdateCommonOnly<E>(E thisEntity) where E : class, ISimpleDapperEntity
         {
             using IDbConnection cons = GetConnection();
             cons.UpdateEntity(thisEntity, EnumUpdateCategory.Common);
+        }
+        public void UpdateAll<E>(E thisEntity) where E : class, ISimpleDapperEntity
+        {
+            using IDbConnection cons = GetConnection();
+            cons.UpdateEntity(thisEntity, EnumUpdateCategory.All);
         }
         public async Task InsertRangeAsync<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified, bool isStarterData = false, Action? recordsExisted = null) where E : class, ISimpleDapperEntity
         {
@@ -348,6 +359,16 @@ namespace DapperHelpersLibrary
         {
             using IDbConnection cons = GetConnection();
             await cons.DeleteAsync(thisEntity);
+        }
+        public void DeleteOnly<E>(CustomBasicList<ICondition> conditions) where E : class, ISimpleDapperEntity
+        {
+            using IDbConnection cons = GetConnection();
+            cons.Delete<E>(conditions, conn: GetConnector);
+        }
+        public async Task DeleteOnlyAsync<E>(CustomBasicList<ICondition> conditions) where E : class, ISimpleDapperEntity
+        {
+            using IDbConnection cons = GetConnection();
+            await cons.DeleteAsync<E>(conditions, conn: GetConnector);
         }
         public void DeleteOnly<E>(int id) where E : class, ISimpleDapperEntity
         {

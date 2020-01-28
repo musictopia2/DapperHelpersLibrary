@@ -23,7 +23,7 @@ namespace DapperHelpersLibrary.MapHelpers
         public PropertyInfo PropertyDetails { get; set; }
         public string GetDataType()
         {
-            if (IsBoolProperty == true || PropertyDetails.IsInt() == true)
+            if (IsBoolProperty == true || PropertyDetails.IsIntOrEnum() == true)
                 return "integer";
             return "string";
         }
