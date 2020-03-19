@@ -4,7 +4,6 @@ namespace DapperHelpersLibrary.MapHelpers
 {
     public class DatabaseMapping //will risk making this internal since i should not need it public for this
     {
-        //since i need to test the statement, i have to put as public for now.
 
         public string ObjectName { get; set; } //its possible i have to change it.  its used for dynamic parameters for conditions.
         public object? Value { get; set; }

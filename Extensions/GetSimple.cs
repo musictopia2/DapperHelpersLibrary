@@ -1,5 +1,4 @@
-﻿using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
-using CommonBasicStandardLibraries.CollectionClasses;
+﻿using CommonBasicStandardLibraries.CollectionClasses;
 using CommonBasicStandardLibraries.DatabaseHelpers.EntityInterfaces;
 using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
 using CommonBasicStandardLibraries.DatabaseHelpers.MiscInterfaces;
@@ -66,7 +65,7 @@ namespace DapperHelpersLibrary.Extensions
             thisStr.Append(GetLimitSQLite(category, howMany));
             sqls = thisStr.ToString();
             return db.Query<E>(sqls, thisTran, commandTimeout: connectionTimeOut);
-        } 
+        }
         private async static Task<IEnumerable<E>> PrivateGetSingleItemAsync<E>(this IDbConnection db, int id, IDbConnector conn, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
         {
             StringBuilder builder = new StringBuilder();
@@ -90,7 +89,7 @@ namespace DapperHelpersLibrary.Extensions
             main.AddRelationships(detail);
             action?.Invoke(main, detail);
             return main;
-        } 
+        }
         public static E Get<E, D1>(this IDbConnection db, int id, IDbConnector conn, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
             IEnumerable<E> Results = db.PrivateGetOneToOneItem(id, conn, action, thisTran, connectionTimeOut);
@@ -175,7 +174,7 @@ namespace DapperHelpersLibrary.Extensions
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             string sqls = GetSimpleSelectStatement<E, D1, D2>(sortList, category, howMany);
             return db.Query<E, D1, D2, E>(sqls, (Main, Detail1, Detail2) => PrivateOneToOne(Main, Detail1, Detail2, action), thisTran, commandTimeout: connectionTimeOut);
-        } 
+        }
         private async static Task<IEnumerable<E>> PrivateGetOneToOneItemAsync<E, D1, D2>(this IDbConnection db, int id, IDbConnector conn, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
@@ -207,8 +206,8 @@ namespace DapperHelpersLibrary.Extensions
             return thisTemp;
         }
         internal static E PrivateGetOneToMany<E, D1, D2>(E main, D1 detail1, D2 detail2, Action<E, D1, D2>? action, Dictionary<int, E> thisDict) where E : class, IJoin3Entity<D1, D2>
-            where D1: class
-            where D2: class
+            where D1 : class
+            where D2 : class
         {
             if (detail1 == null)
             {

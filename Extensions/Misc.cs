@@ -12,24 +12,9 @@ namespace DapperHelpersLibrary.Extensions
     //this is for cases where we don't know what category to put under but are still basic extensions  an example is creating sqlite databases.
     public static class Misc
     {
-        //internal static EnumDatabaseCategory GetDatabaseCategory(this IDbConnection db) //maybe need this (?)
-        //{
-        //    IDbConnector conn = cons!.Resolve<IDbConnector>();
-        //    return conn.GetCategory(db); //this way i can support either via unit testing or not.
-        //    //if (db is SqlConnection)
-        //    //    return EnumDatabaseCategory.SQLServer;
-        //    //else if (db is SQLiteConnection)
-        //    //    return EnumDatabaseCategory.SQLite;
-        //    //throw new BasicBlankException("Only SQL Server And SQLite are supported currently");
-        //}
         internal static EnumDatabaseCategory GetDatabaseCategory(this IDbConnection db, IDbConnector conn) //maybe need this (?)
         {
             return conn.GetCategory(db);
-            //if (db is SqlConnection)
-            //    return EnumDatabaseCategory.SQLServer;
-            //else if (db is SQLiteConnection)
-            //    return EnumDatabaseCategory.SQLite;
-            //throw new BasicBlankException("Only SQL Server And SQLite are supported currently");
         }
         public static void CreateTableSQLite<E>(this IDbConnection db, IDbConnector conn) where E : class
         {

@@ -33,7 +33,7 @@ namespace DapperHelpersLibrary
             _isTesting = true;
             _connectionString = GetInMemorySQLiteString();
             Category = EnumDatabaseCategory.SQLite; //only sqlite can be used for testing
-            GetConnector = cons!.Resolve<IDbConnector>();
+            GetConnector = cons!.GetSQLiteConnector<IDbConnector>();
         }
         private readonly bool _isTesting;
         private string GetInMemorySQLiteString()
@@ -46,15 +46,29 @@ namespace DapperHelpersLibrary
             if (_isTesting == true)
                 throw new BasicBlankException("You already decided to test this");
             SetUpStandard(category, key, config);
-            GetConnector = cons!.Resolve<IDbConnector>(); //risk doing it this way now.
+            GetConnector = PrivateConnector();
         }
+
+        private IDbConnector PrivateConnector()
+        {
+            if (Category == EnumDatabaseCategory.SQLServer)
+            {
+                return cons!.GetSQLServerConnector<IDbConnector>();
+            }
+            if (Category == EnumDatabaseCategory.SQLite)
+            {
+                return cons!.GetSQLiteConnector<IDbConnector>();
+            }
+            return cons!.Resolve<IDbConnector>(); //i don't think mysql will use this.  if i am wrong, fix.
+        }
+
         public ConnectionHelper(ISimpleConfig config, Func<EnumDatabaseCategory, string> key, Func<Task<EnumDatabaseCategory>> functs)
         {
             if (_isTesting == true)
                 throw new BasicBlankException("You already decided to test this");
 
             SetUpStandard(config, key, functs);
-            GetConnector = cons!.Resolve<IDbConnector>(); //risk doing it this way now.
+            GetConnector = PrivateConnector();
         }
         private async void SetUpStandard(ISimpleConfig config, Func<EnumDatabaseCategory, string> key, Func<Task<EnumDatabaseCategory>> functs)
         {
@@ -82,8 +96,8 @@ namespace DapperHelpersLibrary
             {
                 _connectionString = $@"Data Source = {pathOrDatabaseName}";
             }
-            GetConnector = cons!.Resolve<IDbConnector>();
             Category = category;
+            GetConnector = PrivateConnector();
         }
         public IDbConnection GetConnection() //if you want the most flexibility
         {

@@ -3,18 +3,17 @@ using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.Misc;
 using CommonBasicStandardLibraries.CollectionClasses;
 using CommonBasicStandardLibraries.DatabaseHelpers.ConditionClasses;
 using CommonBasicStandardLibraries.DatabaseHelpers.EntityInterfaces;
+using CommonBasicStandardLibraries.DatabaseHelpers.Extensions;
 using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
 using CommonBasicStandardLibraries.Exceptions;
-using DapperHelpersLibrary.Extensions;
 using DapperHelpersLibrary.MapHelpers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using static CommonBasicStandardLibraries.DatabaseHelpers.Extensions.ReflectionDatabase;
 using static DapperHelpersLibrary.MapHelpers.MapBaseHelperClass;
 using static DapperHelpersLibrary.SQLHelpers.SimpleStatementHelpers;
 using cs = CommonBasicStandardLibraries.DatabaseHelpers.ConditionClasses.ConditionOperators;
-using CommonBasicStandardLibraries.DatabaseHelpers.Extensions;
-using static CommonBasicStandardLibraries.DatabaseHelpers.Extensions.ReflectionDatabase;
 namespace DapperHelpersLibrary.SQLHelpers
 {
     internal static class StatementSelectFactoryJoin
