@@ -1,19 +1,18 @@
-﻿using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
-using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.ConfigProcesses;
-using CommonBasicStandardLibraries.BasicDataSettingsAndProcesses;
-using CommonBasicStandardLibraries.CollectionClasses;
-using CommonBasicStandardLibraries.DatabaseHelpers.ConditionClasses;
-using CommonBasicStandardLibraries.DatabaseHelpers.EntityInterfaces;
-using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
-using CommonBasicStandardLibraries.DatabaseHelpers.MiscInterfaces;
-using CommonBasicStandardLibraries.Exceptions;
+﻿using CommonBasicLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
+using CommonBasicLibraries.AdvancedGeneralFunctionsAndProcesses.ConfigProcesses;
+using CommonBasicLibraries.BasicDataSettingsAndProcesses;
+using CommonBasicLibraries.CollectionClasses;
+using CommonBasicLibraries.DatabaseHelpers.ConditionClasses;
+using CommonBasicLibraries.DatabaseHelpers.EntityInterfaces;
+using CommonBasicLibraries.DatabaseHelpers.MiscClasses;
+using CommonBasicLibraries.DatabaseHelpers.MiscInterfaces;
 using Dapper;
 using DapperHelpersLibrary.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks; //most of the time, i will be using asyncs.
-using static CommonBasicStandardLibraries.BasicDataSettingsAndProcesses.BasicDataFunctions;
+using static CommonBasicLibraries.BasicDataSettingsAndProcesses.BasicDataFunctions;
 using static DapperHelpersLibrary.SQLHelpers.StatementFactoryUpdates;
 namespace DapperHelpersLibrary
 {
@@ -33,10 +32,15 @@ namespace DapperHelpersLibrary
             _isTesting = true;
             _connectionString = GetInMemorySQLiteString();
             Category = EnumDatabaseCategory.SQLite; //only sqlite can be used for testing
-            GetConnector = cons!.GetSQLiteConnector<IDbConnector>();
+            if (GlobalClass.SQLiteConnector is null)
+            {
+                throw new CustomBasicException("You never registered the interface for sqlite data connector");
+            }
+            GetConnector = GlobalClass.SQLiteConnector;
+            //GetConnector = cons!.GetSQLiteConnector<IDbConnector>();
         }
         private readonly bool _isTesting;
-        private string GetInMemorySQLiteString()
+        private static string GetInMemorySQLiteString()
         {
             return "Data Source=:memory:";
         }
@@ -44,7 +48,9 @@ namespace DapperHelpersLibrary
         public ConnectionHelper(EnumDatabaseCategory category, string key, ISimpleConfig config)
         {
             if (_isTesting == true)
-                throw new BasicBlankException("You already decided to test this");
+            {
+                throw new CustomBasicException("You already decided to test this");
+            }
             SetUpStandard(category, key, config);
             GetConnector = PrivateConnector();
         }
@@ -53,20 +59,37 @@ namespace DapperHelpersLibrary
         {
             if (Category == EnumDatabaseCategory.SQLServer)
             {
-                return cons!.GetSQLServerConnector<IDbConnector>();
+                if (GlobalClass.SQLServerConnector is null)
+                {
+                    throw new CustomBasicException("You never registered the interface for sql server data connector");
+                }
+                return GlobalClass.SQLServerConnector;
             }
             if (Category == EnumDatabaseCategory.SQLite)
             {
-                return cons!.GetSQLiteConnector<IDbConnector>();
+                if (GlobalClass.SQLiteConnector is null)
+                {
+                    throw new CustomBasicException("You never registered the interface for sqlite data connector");
+                }
+                return GlobalClass.SQLiteConnector;
             }
-            return cons!.Resolve<IDbConnector>(); //i don't think mysql will use this.  if i am wrong, fix.
+            if (Category == EnumDatabaseCategory.MySQL)
+            {
+                if (GlobalClass.MySQLConnector is null)
+                {
+                    throw new CustomBasicException("You never registered the interface for mysql data connector");
+                }
+                return GlobalClass.MySQLConnector;
+            }
+            throw new CustomBasicException("The data connector currently is unknown.  May require rethinking");
         }
 
         public ConnectionHelper(ISimpleConfig config, Func<EnumDatabaseCategory, string> key, Func<Task<EnumDatabaseCategory>> functs)
         {
             if (_isTesting == true)
-                throw new BasicBlankException("You already decided to test this");
-
+            {
+                throw new CustomBasicException("You already decided to test this");
+            }
             SetUpStandard(config, key, functs);
             GetConnector = PrivateConnector();
         }
@@ -82,15 +105,19 @@ namespace DapperHelpersLibrary
             _connectionString = await config.GetStringAsync(key);
             Category = category;
         }
-        
         public ConnectionHelper(EnumDatabaseCategory category, string pathOrDatabaseName)
         {
             if (_isTesting == true)
-                throw new BasicBlankException("You already decided to test this");
+            {
+                throw new CustomBasicException("You already decided to test this");
+            }
             if (category == EnumDatabaseCategory.SQLServer)
             {
-                ISQLServer sqls = cons!.Resolve<ISQLServer>();
-                _connectionString = sqls.GetConnectionString(pathOrDatabaseName);
+                if (SQLServerConnectionClass is null)
+                {
+                    throw new CustomBasicException("You never registered the ISQLServer Interface.  Try setting the variable to the basicdatafunctions static class the variable to represent how you are connecting to the database");
+                }
+                _connectionString = SQLServerConnectionClass.GetConnectionString(pathOrDatabaseName);
             }
             else
             {
@@ -104,30 +131,32 @@ namespace DapperHelpersLibrary
             if (Category == EnumDatabaseCategory.SQLite)
             {
                 IDbConnection output = GetConnector.GetConnection(EnumDatabaseCategory.SQLite, _connectionString);
-                //IDbConnection output = new SQLiteConnection(ConnectionString);
                 if (_isTesting == true)
+                {
                     output.Open(); //for testing, has to open connection.
+                }
                 output.Dispose(); //i think.
-                //CommonBasicStandardLibraries.BasicDataSettingsAndProcesses.VBCompat.Stop();
                 return GetConnector.GetConnection(EnumDatabaseCategory.SQLite, _connectionString);
             }
             else if (Category == EnumDatabaseCategory.SQLServer)
             {
                 if (_isTesting == true)
-                    throw new BasicBlankException("You can't be testing on a sql server database");
+                {
+                    throw new CustomBasicException("You can't be testing on a sql server database");
+                }
                 return GetConnector.GetConnection(EnumDatabaseCategory.SQLServer, _connectionString);
             }
             else if (Category == EnumDatabaseCategory.MySQL)
             {
                 if (_isTesting == true)
                 {
-                    throw new BasicBlankException("You can't be testing on mySQL database");
+                    throw new CustomBasicException("You can't be testing on mySQL database");
                 }
                 return GetConnector.GetConnection(EnumDatabaseCategory.MySQL, _connectionString);
             }
             else
             {
-                throw new BasicBlankException("Only SQL Server, SQLite, and MySQL Databases Are Currently Supported");
+                throw new CustomBasicException("Only SQL Server, SQLite, and MySQL Databases Are Currently Supported");
             }
         }
         #endregion
@@ -165,7 +194,7 @@ namespace DapperHelpersLibrary
             cons.Close();
         }
         public void DoBulkWork<E>(Action<IDbConnection, IDbTransaction, E> action,
-            ICustomBasicList<E> thisList, IsolationLevel isolationLevel = IsolationLevel.Unspecified,
+            BasicList<E> thisList, IsolationLevel isolationLevel = IsolationLevel.Unspecified,
             Action<IDbConnection>? beforeWork = null, Action<IDbConnection>? afterWork = null)
         {
             using IDbConnection cons = GetConnection();
@@ -203,7 +232,7 @@ namespace DapperHelpersLibrary
             }
             cons.Close();
         }
-        public async Task DoBulkWorkAsync<E>(Func<IDbConnection, IDbTransaction, E, Task> action, ICustomBasicList<E> thisList, IsolationLevel isolationLevel = IsolationLevel.Unspecified,
+        public async Task DoBulkWorkAsync<E>(Func<IDbConnection, IDbTransaction, E, Task> action, BasicList<E> thisList, IsolationLevel isolationLevel = IsolationLevel.Unspecified,
             Action<IDbConnection>? beforeWork = null, Func<IDbConnection, Task>? afterWork = null)
         {
             using IDbConnection cons = GetConnection();
@@ -243,7 +272,7 @@ namespace DapperHelpersLibrary
         }
         #endregion
         #region Unique Functions
-        public async Task UpdateListOnlyAsync<E>(ICustomBasicList<E> updateList, EnumUpdateCategory category = EnumUpdateCategory.Common, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
+        public async Task UpdateListOnlyAsync<E>(BasicList<E> updateList, EnumUpdateCategory category = EnumUpdateCategory.Common, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
         {
             await DoBulkWorkAsync<E>(async (cons, tran, thisEntity) =>
             {
@@ -251,11 +280,11 @@ namespace DapperHelpersLibrary
                 tran.Commit();
             }, updateList, isolationLevel);
         }
-        public async Task UpdateListAutoOnlyAsync<E>(CustomBasicList<E> updateList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity, IUpdatableEntity
+        public async Task UpdateListAutoOnlyAsync<E>(BasicList<E> updateList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity, IUpdatableEntity
         {
             await UpdateListOnlyAsync(updateList, category: EnumUpdateCategory.Auto, isolationLevel);
         }
-        public async Task UpdateListOnlyAsync<E>(CustomBasicList<E> updateList, CustomBasicList<UpdateFieldInfo> manuelList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
+        public async Task UpdateListOnlyAsync<E>(BasicList<E> updateList, BasicList<UpdateFieldInfo> manuelList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
         {
             await DoBulkWorkAsync(async (cons, tran, thisEntity) =>
             {
@@ -263,7 +292,7 @@ namespace DapperHelpersLibrary
                 tran.Commit(); //i think i forgot this.
             }, updateList, isolationLevel);
         }
-        public void UpdateCommonListOnly<E>(CustomBasicList<E> updateList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
+        public void UpdateCommonListOnly<E>(BasicList<E> updateList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
         {
             DoBulkWork((cons, tran, thisEntity) =>
             {
@@ -293,7 +322,7 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             cons.UpdateEntity(thisEntity, EnumUpdateCategory.All);
         }
-        public async Task InsertRangeAsync<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified, bool isStarterData = false, Action? recordsExisted = null) where E : class, ISimpleDapperEntity
+        public async Task InsertRangeAsync<E>(BasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified, bool isStarterData = false, Action? recordsExisted = null) where E : class, ISimpleDapperEntity
         {
             await DoWorkAsync(async (cons, tran) =>
             {
@@ -304,7 +333,6 @@ namespace DapperHelpersLibrary
                     {
                         recordsExisted?.Invoke(); //so a process can do something to show records already existed.
                         return; //because already exist.
-
                     }
                 }
                 await cons.InsertRangeAsync(insertList, tran, GetConnector);
@@ -321,7 +349,7 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             return cons.InsertSingle(entity, GetConnector);
         }
-        public void InsertRange<E>(CustomBasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified, bool isStarterData = false) where E : class, ISimpleDapperEntity
+        public void InsertRange<E>(BasicList<E> insertList, IsolationLevel isolationLevel = IsolationLevel.Unspecified, bool isStarterData = false) where E : class, ISimpleDapperEntity
         {
             DoWork((cons, tran) =>
             {
@@ -329,14 +357,16 @@ namespace DapperHelpersLibrary
                 {
                     int count = cons.Count<E>(GetConnector, tran);
                     if (count > 0)
+                    {
                         return; //because already exist.
+                    }
                 }
                 cons.InsertRange(insertList, tran, GetConnector);
             }, isolationLevel);
         }
         #endregion
         #region Direct To Extensions Except Get
-        public async Task AddListOnlyAsync<E>(CustomBasicList<E> addList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
+        public async Task AddListOnlyAsync<E>(BasicList<E> addList, IsolationLevel isolationLevel = IsolationLevel.Unspecified) where E : class, ISimpleDapperEntity
         {
             using IDbConnection cons = GetConnection();
             cons.Open();
@@ -374,12 +404,12 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             await cons.DeleteAsync(thisEntity);
         }
-        public void DeleteOnly<E>(CustomBasicList<ICondition> conditions) where E : class, ISimpleDapperEntity
+        public void DeleteOnly<E>(BasicList<ICondition> conditions) where E : class, ISimpleDapperEntity
         {
             using IDbConnection cons = GetConnection();
             cons.Delete<E>(conditions, conn: GetConnector);
         }
-        public async Task DeleteOnlyAsync<E>(CustomBasicList<ICondition> conditions) where E : class, ISimpleDapperEntity
+        public async Task DeleteOnlyAsync<E>(BasicList<ICondition> conditions) where E : class, ISimpleDapperEntity
         {
             using IDbConnection cons = GetConnection();
             await cons.DeleteAsync<E>(conditions, conn: GetConnector);
@@ -401,7 +431,7 @@ namespace DapperHelpersLibrary
                 await cons.ExecuteAsync(sqls);
             });
         }
-        public async Task ExecuteAsync(CustomBasicList<string> sqlList, IsolationLevel isolationLevel = IsolationLevel.Unspecified)
+        public async Task ExecuteAsync(BasicList<string> sqlList, IsolationLevel isolationLevel = IsolationLevel.Unspecified)
         {
             await DoWorkAsync(async (cons, trans) =>
             {
@@ -412,7 +442,7 @@ namespace DapperHelpersLibrary
                 trans.Commit();
             }, isolationLevel);
         }
-        public bool Exists<E>(CustomBasicList<ICondition> conditions) where E : class
+        public bool Exists<E>(BasicList<ICondition> conditions) where E : class
         {
             bool rets = false;
             DoWork(cons =>
@@ -427,22 +457,22 @@ namespace DapperHelpersLibrary
 
        
 
-        public R GetSingleObject<E, R>(string property, CustomBasicList<SortInfo> sortList, CustomBasicList<ICondition>? conditions = null) where E : class, ISimpleDapperEntity
+        public R GetSingleObject<E, R>(string property, BasicList<SortInfo> sortList, BasicList<ICondition>? conditions = null) where E : class, ISimpleDapperEntity
         {
             using IDbConnection cons = GetConnection();
             return cons.GetSingleObject<E, R>(property, sortList, GetConnector, conditions);
         }
-        public async Task<R> GetSingleObjectAsync<E, R>(string property, CustomBasicList<SortInfo> sortList, CustomBasicList<ICondition>? conditions = null) where E : class, ISimpleDapperEntity
+        public async Task<R> GetSingleObjectAsync<E, R>(string property, BasicList<SortInfo> sortList, BasicList<ICondition>? conditions = null) where E : class, ISimpleDapperEntity
         {
             using IDbConnection cons = GetConnection();
             return await cons.GetSingleObjectAsync<E, R>(property, sortList, GetConnector, conditions);
         }
-        public CustomBasicList<R> GetObjectList<E, R>(string property, CustomBasicList<ICondition>? conditions = null, CustomBasicList<SortInfo>? sortList = null, int howMany = 0) where E : class
+        public BasicList<R> GetObjectList<E, R>(string property, BasicList<ICondition>? conditions = null, BasicList<SortInfo>? sortList = null, int howMany = 0) where E : class
         {
             using IDbConnection cons = GetConnection();
             return cons.GetObjectList<E, R>(property, GetConnector, conditions, sortList, howMany);
         }
-        public async Task<CustomBasicList<R>> GetObjectListAsync<E, R>(string property, CustomBasicList<ICondition>? conditions = null, CustomBasicList<SortInfo>? sortList = null, int howMany = 0) where E : class
+        public async Task<BasicList<R>> GetObjectListAsync<E, R>(string property, BasicList<ICondition>? conditions = null, BasicList<SortInfo>? sortList = null, int howMany = 0) where E : class
         {
             using IDbConnection cons = GetConnection();
             return await cons.GetObjectListAsync<E, R>(property, GetConnector, conditions, sortList, howMany);
@@ -452,7 +482,7 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             return cons.Get<E>(id, GetConnector);
         }
-        public IEnumerable<E> Get<E>(CustomBasicList<SortInfo>? sortList = null, int howMany = 0) where E : class
+        public IEnumerable<E> Get<E>(BasicList<SortInfo>? sortList = null, int howMany = 0) where E : class
         {
             using IDbConnection cons = GetConnection();
             return cons.Get<E>(GetConnector, sortList, howMany);
@@ -462,7 +492,7 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             return await cons.GetAsync<E>(id, GetConnector);
         }
-        public async Task<IEnumerable<E>> GetAsync<E>(CustomBasicList<SortInfo>? sortList = null, int howMany = 0) where E : class
+        public async Task<IEnumerable<E>> GetAsync<E>(BasicList<SortInfo>? sortList = null, int howMany = 0) where E : class
         {
             using IDbConnection cons = GetConnection();
             return await cons.GetAsync<E>(GetConnector, sortList, howMany);
@@ -472,7 +502,7 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             return cons.Get<E, D1>(id, GetConnector);
         }
-        public IEnumerable<E> Get<E, D1>(CustomBasicList<SortInfo>? sortList = null, int howMany = 0) where E : class, IJoinedEntity where D1 : class
+        public IEnumerable<E> Get<E, D1>(BasicList<SortInfo>? sortList = null, int howMany = 0) where E : class, IJoinedEntity where D1 : class
         {
             using IDbConnection cons = GetConnection();
             return cons.Get<E, D1>(sortList, GetConnector, howMany);
@@ -482,7 +512,7 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             return await cons.GetAsync<E, D1>(id, GetConnector);
         }
-        public async Task<IEnumerable<E>> GetAsync<E, D1>(CustomBasicList<SortInfo>? sortList, int howMany = 0) where E : class, IJoinedEntity where D1 : class
+        public async Task<IEnumerable<E>> GetAsync<E, D1>(BasicList<SortInfo>? sortList, int howMany = 0) where E : class, IJoinedEntity where D1 : class
         {
             using IDbConnection cons = GetConnection();
             return await cons.GetAsync<E, D1>(sortList, GetConnector, howMany);
@@ -492,7 +522,7 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             return cons.Get<E, D1, D2>(id, GetConnector);
         }
-        public IEnumerable<E> Get<E, D1, D2>(CustomBasicList<SortInfo> sortList, int howMany = 0) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        public IEnumerable<E> Get<E, D1, D2>(BasicList<SortInfo> sortList, int howMany = 0) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
             using IDbConnection cons = GetConnection();
             return cons.Get<E, D1, D2>(sortList, GetConnector, howMany);
@@ -502,7 +532,7 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             return await cons.GetAsync<E, D1, D2>(id, GetConnector);
         }
-        public async Task<IEnumerable<E>> GetAsync<E, D1, D2>(CustomBasicList<SortInfo> sortList, int howMany = 0) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        public async Task<IEnumerable<E>> GetAsync<E, D1, D2>(BasicList<SortInfo> sortList, int howMany = 0) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
             using IDbConnection cons = GetConnection();
             return await cons.GetAsync<E, D1, D2>(sortList, GetConnector, howMany);
@@ -512,7 +542,7 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             return cons.GetOneToMany<E, D1>(id, GetConnector);
         }
-        public IEnumerable<E> GetOneToMany<E, D1>(CustomBasicList<SortInfo>? sortList = null) where E : class, IJoinedEntity where D1 : class
+        public IEnumerable<E> GetOneToMany<E, D1>(BasicList<SortInfo>? sortList = null) where E : class, IJoinedEntity where D1 : class
         {
             using IDbConnection cons = GetConnection();
             return cons.GetOneToMany<E, D1>(GetConnector, sortList);
@@ -522,74 +552,74 @@ namespace DapperHelpersLibrary
             using IDbConnection cons = GetConnection();
             return await cons.GetOneToManyAsync<E, D1>(id, GetConnector);
         }
-        public async Task<IEnumerable<E>> GetOneToManyAsync<E, D1>(CustomBasicList<SortInfo>? sortList = null) where E : class, IJoinedEntity where D1 : class
+        public async Task<IEnumerable<E>> GetOneToManyAsync<E, D1>(BasicList<SortInfo>? sortList = null) where E : class, IJoinedEntity where D1 : class
         {
             using IDbConnection cons = GetConnection();
             return await cons.GetOneToManyAsync<E, D1>(GetConnector, sortList);
         }
-        public CustomBasicList<E> Get<E>(CustomBasicList<ICondition> conditions, CustomBasicList<SortInfo>? sortList = null, int howMany = 0) where E : class
+        public BasicList<E> Get<E>(BasicList<ICondition> conditions, BasicList<SortInfo>? sortList = null, int howMany = 0) where E : class
         {
             using IDbConnection cons = GetConnection();
             return cons.Get<E>(conditions, GetConnector, sortList, howMany);
         }
-        public async Task<CustomBasicList<E>> GetAsync<E>(CustomBasicList<ICondition> conditions, CustomBasicList<SortInfo>? sortList = null, int howMany = 0) where E : class
+        public async Task<BasicList<E>> GetAsync<E>(BasicList<ICondition> conditions, BasicList<SortInfo>? sortList = null, int howMany = 0) where E : class
         {
             using IDbConnection cons = GetConnection();
             return await cons.GetAsync<E>(conditions, GetConnector, sortList, howMany);
         }
-        public CustomBasicList<E> GetOneToMany<E, D1>(CustomBasicList<ICondition> conditionList, CustomBasicList<SortInfo>? sortList = null) where E : class, IJoinedEntity where D1 : class
+        public BasicList<E> GetOneToMany<E, D1>(BasicList<ICondition> conditionList, BasicList<SortInfo>? sortList = null) where E : class, IJoinedEntity where D1 : class
         {
             using IDbConnection cons = GetConnection();
             return cons.GetOneToMany<E, D1>(conditionList, GetConnector, sortList);
         }
-        public CustomBasicList<E> GetOneToMany<E, D1, D2>(CustomBasicList<ICondition> conditionList, CustomBasicList<SortInfo>? sortList = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        public BasicList<E> GetOneToMany<E, D1, D2>(BasicList<ICondition> conditionList, BasicList<SortInfo>? sortList = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
             using IDbConnection cons = GetConnection();
             return cons.GetOneToMany<E, D1, D2>(conditionList, GetConnector, sortList);
         }
-        public async Task<CustomBasicList<E>> GetOneToManyAsync<E, D1>(CustomBasicList<ICondition> conditionList, CustomBasicList<SortInfo>? sortList = null) where E : class, IJoinedEntity where D1 : class
+        public async Task<BasicList<E>> GetOneToManyAsync<E, D1>(BasicList<ICondition> conditionList, BasicList<SortInfo>? sortList = null) where E : class, IJoinedEntity where D1 : class
         {
             using IDbConnection cons = GetConnection();
             return await cons.GetOneToManyAsync<E, D1>(conditionList, GetConnector, sortList);
         }
-        public async Task<CustomBasicList<E>> GetOneToManyAsync<E, D1, D2>(CustomBasicList<ICondition> conditionList, CustomBasicList<SortInfo>? sortList = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        public async Task<BasicList<E>> GetOneToManyAsync<E, D1, D2>(BasicList<ICondition> conditionList, BasicList<SortInfo>? sortList = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
             using IDbConnection cons = GetConnection();
             return await GetOneToManyAsync<E, D1, D2>(conditionList, sortList);
         }
-        public IEnumerable<E> Get<E, D1>(CustomBasicList<ICondition> conditionList, CustomBasicList<SortInfo>? sortList = null, int howMany = 0) where E : class, IJoinedEntity where D1 : class
+        public IEnumerable<E> Get<E, D1>(BasicList<ICondition> conditionList, BasicList<SortInfo>? sortList = null, int howMany = 0) where E : class, IJoinedEntity where D1 : class
         {
             using IDbConnection cons = GetConnection();
             return cons.Get<E, D1>(conditionList, GetConnector, sortList, howMany);
         }
-        public async Task<IEnumerable<E>> GetAsync<E, D1>(CustomBasicList<ICondition> conditionList, CustomBasicList<SortInfo>? sortList = null, int howMany = 0) where E : class, IJoinedEntity where D1 : class
+        public async Task<IEnumerable<E>> GetAsync<E, D1>(BasicList<ICondition> conditionList, BasicList<SortInfo>? sortList = null, int howMany = 0) where E : class, IJoinedEntity where D1 : class
         {
             using IDbConnection cons = GetConnection();
             return await cons.GetAsync<E, D1>(conditionList, GetConnector, sortList, howMany);
         }
-        public IEnumerable<E> Get<E, D1, D2>(CustomBasicList<ICondition> conditionList, CustomBasicList<SortInfo>? sortList = null, int howMany = 0) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        public IEnumerable<E> Get<E, D1, D2>(BasicList<ICondition> conditionList, BasicList<SortInfo>? sortList = null, int howMany = 0) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
             using IDbConnection cons = GetConnection();
             return cons.Get<E, D1, D2>(conditionList, GetConnector, sortList, howMany);
         }
-        public async Task<IEnumerable<E>> GetAsync<E, D1, D2>(CustomBasicList<ICondition> conditionList, CustomBasicList<SortInfo>? sortList = null, int howMany = 0) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        public async Task<IEnumerable<E>> GetAsync<E, D1, D2>(BasicList<ICondition> conditionList, BasicList<SortInfo>? sortList = null, int howMany = 0) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
             using IDbConnection cons = GetConnection();
             return await cons.GetAsync<E, D1, D2>(conditionList, GetConnector, sortList, howMany);
         }
         //decided that this only works via interface.  probably best to keep it separate.
         //changed my mind because sometimes i just want to do directly.
-        public CustomBasicList<T> LoadData<T, U>(string sqlStatement, U parameters)
+        public BasicList<T> LoadData<T, U>(string sqlStatement, U parameters)
         {
             using IDbConnection conn = GetConnection();
-            CustomBasicList<T> rows = conn.Query<T>(sqlStatement, parameters).ToCustomBasicList();
+            BasicList<T> rows = conn.Query<T>(sqlStatement, parameters).ToBasicList();
             return rows;
         }
-        public async Task<CustomBasicList<T>> LoadDataAsync<T, U>(string sqlStatement, U parameters)
+        public async Task<BasicList<T>> LoadDataAsync<T, U>(string sqlStatement, U parameters)
         {
             using IDbConnection conn = GetConnection();
             var rows = await conn.QueryAsync<T>(sqlStatement, parameters);
-            return rows.ToCustomBasicList();
+            return rows.ToBasicList();
         }
         public void SaveData<T>(string sqlStatement, T parameters)
         {
@@ -601,7 +631,7 @@ namespace DapperHelpersLibrary
             using IDbConnection conn = GetConnection();
             await conn.ExecuteAsync(sqlStatement, parameters);
         }
-        public CustomBasicList<T> LoadData<T, U>(string sqlStatement, U parameters, bool isStoredProcedure)
+        public BasicList<T> LoadData<T, U>(string sqlStatement, U parameters, bool isStoredProcedure)
         {
             using IDbConnection conn = GetConnection();
             CommandType commandType = CommandType.Text;
@@ -609,10 +639,10 @@ namespace DapperHelpersLibrary
             {
                 commandType = CommandType.StoredProcedure;
             }
-            CustomBasicList<T> rows = conn.Query<T>(sqlStatement, parameters, commandType: commandType).ToCustomBasicList();
+            BasicList<T> rows = conn.Query<T>(sqlStatement, parameters, commandType: commandType).ToBasicList();
             return rows;
         }
-        public async Task<CustomBasicList<T>> LoadDataAsync<T, U>(string sqlStatement, U parameters, bool isStoredProcedure)
+        public async Task<BasicList<T>> LoadDataAsync<T, U>(string sqlStatement, U parameters, bool isStoredProcedure)
         {
             using IDbConnection conn = GetConnection();
             CommandType commandType = CommandType.Text;
@@ -621,7 +651,7 @@ namespace DapperHelpersLibrary
                 commandType = CommandType.StoredProcedure;
             }
             var rows = await conn.QueryAsync<T>(sqlStatement, parameters, commandType: commandType);
-            return rows.ToCustomBasicList();
+            return rows.ToBasicList();
 
         }
         //sql server portion

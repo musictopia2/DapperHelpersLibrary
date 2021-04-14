@@ -1,7 +1,7 @@
-﻿using CommonBasicStandardLibraries.CollectionClasses;
-using CommonBasicStandardLibraries.DatabaseHelpers.EntityInterfaces;
-using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
-using CommonBasicStandardLibraries.DatabaseHelpers.MiscInterfaces;
+﻿using CommonBasicLibraries.CollectionClasses;
+using CommonBasicLibraries.DatabaseHelpers.EntityInterfaces;
+using CommonBasicLibraries.DatabaseHelpers.MiscClasses;
+using CommonBasicLibraries.DatabaseHelpers.MiscInterfaces;
 using Dapper;
 using System;
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ namespace DapperHelpersLibrary.Extensions
             IEnumerable<E> results = db.PrivateGetSingleItem<E>(id, conn, thisTran, connectionTimeOut);
             return results.Single();
         }
-        public static IEnumerable<E> Get<E>(this IDbConnection db, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, int howMany = 0, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
+        public static IEnumerable<E> Get<E>(this IDbConnection db, IDbConnector conn, BasicList<SortInfo>? sortList = null, int howMany = 0, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
         {
             return db.PrivateSimpleSelectAll<E>(sortList, conn, howMany, thisTran, connectionTimeOut);
         }
@@ -31,13 +31,13 @@ namespace DapperHelpersLibrary.Extensions
             IEnumerable<E> Results = await db.PrivateGetSingleItemAsync<E>(id, conn, thisTran, connectionTimeOut);
             return Results.Single();
         }
-        public async static Task<IEnumerable<E>> GetAsync<E>(this IDbConnection db, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, int howMany = 0, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
+        public async static Task<IEnumerable<E>> GetAsync<E>(this IDbConnection db, IDbConnector conn, BasicList<SortInfo>? sortList = null, int howMany = 0, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
         {
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             var (sqls, MapList) = GetSimpleSelectStatement<E>(category, howMany);
             if (sortList != null)
             {
-                StringBuilder thisStr = new StringBuilder(sqls);
+                StringBuilder thisStr = new (sqls);
                 thisStr.Append(GetSortStatement(MapList, sortList, false));
                 sqls = thisStr.ToString();
             }
@@ -45,18 +45,18 @@ namespace DapperHelpersLibrary.Extensions
         }
         private static IEnumerable<E> PrivateGetSingleItem<E>(this IDbConnection db, int id, IDbConnector conn, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
         {
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new ();
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             var (sqls, _) = GetSimpleSelectStatement<E>(category);
             builder.Append(sqls);
             DynamicParameters dynamic = GetDynamicIDData(ref builder, id, false);
             return db.Query<E>(builder.ToString(), dynamic, thisTran, commandTimeout: connectionTimeOut);
         }
-        private static IEnumerable<E> PrivateSimpleSelectAll<E>(this IDbConnection db, CustomBasicList<SortInfo>? sortList, IDbConnector conn, int howMany = 0, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
+        private static IEnumerable<E> PrivateSimpleSelectAll<E>(this IDbConnection db, BasicList<SortInfo>? sortList, IDbConnector conn, int howMany = 0, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
         {
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             var (sqls, MapList) = GetSimpleSelectStatement<E>(category, howMany);
-            StringBuilder thisStr = new StringBuilder();
+            StringBuilder thisStr = new ();
             thisStr.Append(sqls);
             if (sortList != null)
             {
@@ -68,7 +68,7 @@ namespace DapperHelpersLibrary.Extensions
         }
         private async static Task<IEnumerable<E>> PrivateGetSingleItemAsync<E>(this IDbConnection db, int id, IDbConnector conn, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
         {
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new ();
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             var (sqls, _) = GetSimpleSelectStatement<E>(category);
             builder.Append(sqls);
@@ -95,7 +95,7 @@ namespace DapperHelpersLibrary.Extensions
             IEnumerable<E> Results = db.PrivateGetOneToOneItem(id, conn, action, thisTran, connectionTimeOut);
             return Results.Single();
         }
-        public static IEnumerable<E> Get<E, D1>(this IDbConnection db, CustomBasicList<SortInfo>? sortList, IDbConnector conn, int howMany = 0, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
+        public static IEnumerable<E> Get<E, D1>(this IDbConnection db, BasicList<SortInfo>? sortList, IDbConnector conn, int howMany = 0, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
             return db.PrivateOneToOneSelectAll(sortList, conn, howMany, action, thisTran, connectionTimeOut);
         }
@@ -104,7 +104,7 @@ namespace DapperHelpersLibrary.Extensions
             IEnumerable<E> Results = await db.PrivateGetOneToOneItemAsync<E, D1>(id, conn, action, thisTran, connectionTimeOut);
             return Results.Single();
         }
-        public async static Task<IEnumerable<E>> GetAsync<E, D1>(this IDbConnection db, CustomBasicList<SortInfo>? sortList, IDbConnector conn, int howMany = 0, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
+        public async static Task<IEnumerable<E>> GetAsync<E, D1>(this IDbConnection db, BasicList<SortInfo>? sortList, IDbConnector conn, int howMany = 0, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             string sqls = GetSimpleSelectStatement<E, D1>(true, sortList, category, howMany);
@@ -112,13 +112,13 @@ namespace DapperHelpersLibrary.Extensions
         }
         private static IEnumerable<E> PrivateGetOneToOneItem<E, D1>(this IDbConnection db, int id, IDbConnector conn, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new ();
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             builder.Append(GetSimpleSelectStatement<E, D1>(true, null, category, 0)); //its implied because of id.
             DynamicParameters dynamic = GetDynamicIDData(ref builder, id, true);
             return db.Query<E, D1, E>(builder.ToString(), (Main, Detail) => PrivateOneToOne(Main, Detail, action), dynamic, thisTran, commandTimeout: connectionTimeOut);
         }
-        private static IEnumerable<E> PrivateOneToOneSelectAll<E, D1>(this IDbConnection db, CustomBasicList<SortInfo>? sortList, IDbConnector conn, int howMany = 0, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
+        private static IEnumerable<E> PrivateOneToOneSelectAll<E, D1>(this IDbConnection db, BasicList<SortInfo>? sortList, IDbConnector conn, int howMany = 0, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             string sqls = GetSimpleSelectStatement<E, D1>(true, sortList, category, howMany);
@@ -126,7 +126,7 @@ namespace DapperHelpersLibrary.Extensions
         }
         private async static Task<IEnumerable<E>> PrivateGetOneToOneItemAsync<E, D1>(this IDbConnection db, int id, IDbConnector conn, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new ();
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             builder.Append(GetSimpleSelectStatement<E, D1>(true, null, category, 0));
             DynamicParameters dynamic = GetDynamicIDData(ref builder, id, true);
@@ -146,7 +146,7 @@ namespace DapperHelpersLibrary.Extensions
             IEnumerable<E> Results = db.PrivateGetOneToOneItem(ID, conn, action, thisTran, ConnectionTimeOut);
             return Results.Single();
         }
-        public static IEnumerable<E> Get<E, D1, D2>(this IDbConnection db, CustomBasicList<SortInfo> sortList, IDbConnector conn, int howMany = 0, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        public static IEnumerable<E> Get<E, D1, D2>(this IDbConnection db, BasicList<SortInfo> sortList, IDbConnector conn, int howMany = 0, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
             return db.PrivateOneToOneSelectAll(sortList, conn, howMany, action, thisTran, connectionTimeOut);
         }
@@ -155,7 +155,7 @@ namespace DapperHelpersLibrary.Extensions
             IEnumerable<E> results = await db.PrivateGetOneToOneItemAsync(id, conn, action, thisTran, connectionTimeOut);
             return results.Single();
         }
-        public async static Task<IEnumerable<E>> GetAsync<E, D1, D2>(this IDbConnection db, CustomBasicList<SortInfo> sortList, IDbConnector conn, int howMany = 0, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        public async static Task<IEnumerable<E>> GetAsync<E, D1, D2>(this IDbConnection db, BasicList<SortInfo> sortList, IDbConnector conn, int howMany = 0, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             string sqls = GetSimpleSelectStatement<E, D1, D2>(sortList, category, howMany);
@@ -163,13 +163,13 @@ namespace DapperHelpersLibrary.Extensions
         }
         private static IEnumerable<E> PrivateGetOneToOneItem<E, D1, D2>(this IDbConnection db, int id, IDbConnector conn, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new ();
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             builder.Append(GetSimpleSelectStatement<E, D1, D2>(null, category, 0));
             DynamicParameters dynamic = GetDynamicIDData(ref builder, id, true);
             return db.Query<E, D1, D2, E>(builder.ToString(), (Main, Detail1, Detail2) => PrivateOneToOne(Main, Detail1, Detail2, action), dynamic, thisTran, commandTimeout: connectionTimeOut);
         }
-        private static IEnumerable<E> PrivateOneToOneSelectAll<E, D1, D2>(this IDbConnection db, CustomBasicList<SortInfo> sortList, IDbConnector conn, int howMany = 0, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
+        private static IEnumerable<E> PrivateOneToOneSelectAll<E, D1, D2>(this IDbConnection db, BasicList<SortInfo> sortList, IDbConnector conn, int howMany = 0, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             string sqls = GetSimpleSelectStatement<E, D1, D2>(sortList, category, howMany);
@@ -178,7 +178,7 @@ namespace DapperHelpersLibrary.Extensions
         private async static Task<IEnumerable<E>> PrivateGetOneToOneItemAsync<E, D1, D2>(this IDbConnection db, int id, IDbConnector conn, Action<E, D1, D2>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoin3Entity<D1, D2> where D1 : class where D2 : class
         {
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new ();
             builder.Append(GetSimpleSelectStatement<E, D1, D2>(null, category, 0));
             DynamicParameters dynamic = GetDynamicIDData(ref builder, id, true);
             return await db.QueryAsync<E, D1, D2, E>(builder.ToString(), (Main, Detail1, Detail2) => PrivateOneToOne(Main, Detail1, Detail2, action), dynamic, thisTran, commandTimeout: connectionTimeOut);
@@ -194,7 +194,7 @@ namespace DapperHelpersLibrary.Extensions
                 return main;
             }
             bool had = false;
-            if (thisDict.TryGetValue(main.ID, out E thisTemp) == false)
+            if (thisDict.TryGetValue(main.ID, out E? thisTemp) == false)
             {
                 thisTemp = main;
                 thisDict.Add(main.ID, thisTemp);
@@ -215,7 +215,7 @@ namespace DapperHelpersLibrary.Extensions
                 return main;
             }
             bool had = false;
-            if (thisDict.TryGetValue(main.ID, out E thisTemp) == false)
+            if (thisDict.TryGetValue(main.ID, out E? thisTemp) == false)
             {
                 thisTemp = main;
                 thisDict.Add(main.ID, thisTemp);
@@ -231,7 +231,7 @@ namespace DapperHelpersLibrary.Extensions
             IEnumerable<E> results = db.PrivateGetOneToManyItem(id, conn, action, thisTran, connectionTimeOut);
             return results.Single();
         }
-        public static IEnumerable<E> GetOneToMany<E, D1>(this IDbConnection db, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
+        public static IEnumerable<E> GetOneToMany<E, D1>(this IDbConnection db, IDbConnector conn, BasicList<SortInfo>? sortList = null, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
             return db.PrivateOneToManySelectAll<E, D1>(conn, sortList, action, thisTran, connectionTimeOut);
         }
@@ -240,37 +240,37 @@ namespace DapperHelpersLibrary.Extensions
             IEnumerable<E> results = await db.PrivateGetOneToManyItemAsync(id, conn, action, thisTran, connectionTimeOut);
             return results.Single();
         }
-        public async static Task<IEnumerable<E>> GetOneToManyAsync<E, D1>(this IDbConnection db, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
+        public async static Task<IEnumerable<E>> GetOneToManyAsync<E, D1>(this IDbConnection db, IDbConnector conn, BasicList<SortInfo>? sortList = null, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             string sqls = GetSimpleSelectStatement<E, D1>(false, sortList, category, 0);
-            Dictionary<int, E> thisDict = new Dictionary<int, E>();
+            Dictionary<int, E> thisDict = new ();
             var thisList = await db.QueryAsync<E, D1, E>(sqls, (Main, Detail) => PrivateGetOneToMany(Main, Detail, action, thisDict), thisTran, commandTimeout: connectionTimeOut);
             return thisList.Distinct();
         }
         private static IEnumerable<E> PrivateGetOneToManyItem<E, D1>(this IDbConnection db, int id, IDbConnector conn, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new ();
             builder.Append(GetSimpleSelectStatement<E, D1>(false, null, category, 0));
             DynamicParameters dynamic = GetDynamicIDData(ref builder, id, true);
-            Dictionary<int, E> thisDict = new Dictionary<int, E>();
+            Dictionary<int, E> thisDict = new ();
             return db.Query<E, D1, E>(builder.ToString(), (Main, Detail) => PrivateGetOneToMany(Main, Detail, action, thisDict), dynamic, thisTran, commandTimeout: connectionTimeOut).Distinct();
         }
-        private static IEnumerable<E> PrivateOneToManySelectAll<E, D1>(this IDbConnection db, IDbConnector conn, CustomBasicList<SortInfo>? sortList = null, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
+        private static IEnumerable<E> PrivateOneToManySelectAll<E, D1>(this IDbConnection db, IDbConnector conn, BasicList<SortInfo>? sortList = null, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
             string sqls = GetSimpleSelectStatement<E, D1>(false, sortList, category, 0);
-            Dictionary<int, E> thisDict = new Dictionary<int, E>();
+            Dictionary<int, E> thisDict = new ();
             return db.Query<E, D1, E>(sqls, (Main, Detail) => PrivateGetOneToMany(Main, Detail, action, thisDict), thisTran, commandTimeout: connectionTimeOut).Distinct();
         }
         private async static Task<IEnumerable<E>> PrivateGetOneToManyItemAsync<E, D1>(this IDbConnection db, int id, IDbConnector conn, Action<E, D1>? action = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class, IJoinedEntity where D1 : class
         {
             EnumDatabaseCategory category = db.GetDatabaseCategory(conn);
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new ();
             builder.Append(GetSimpleSelectStatement<E, D1>(false, null, category, 0));
             DynamicParameters dynamic = GetDynamicIDData(ref builder, id, true);
-            Dictionary<int, E> thisDict = new Dictionary<int, E>();
+            Dictionary<int, E> thisDict = new ();
             var thisList = await db.QueryAsync<E, D1, E>(builder.ToString(), (Main, Detail) => PrivateGetOneToMany(Main, Detail, action, thisDict), dynamic, thisTran, commandTimeout: connectionTimeOut);
             return thisList.Distinct();
         }

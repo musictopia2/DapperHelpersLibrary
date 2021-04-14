@@ -1,11 +1,11 @@
-﻿using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.Misc;
-using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
-using CommonBasicStandardLibraries.DatabaseHelpers.MiscInterfaces;
-using CommonBasicStandardLibraries.Exceptions;
+﻿using CommonBasicLibraries.AdvancedGeneralFunctionsAndProcesses.Misc;
+using CommonBasicLibraries.BasicDataSettingsAndProcesses;
+using CommonBasicLibraries.DatabaseHelpers.MiscClasses;
+using CommonBasicLibraries.DatabaseHelpers.MiscInterfaces;
 using Dapper;
 using System.Data;
 using System.Text;
-using static CommonBasicStandardLibraries.DatabaseHelpers.Extensions.ReflectionDatabase;
+using static CommonBasicLibraries.DatabaseHelpers.Extensions.ReflectionDatabase;
 using static DapperHelpersLibrary.MapHelpers.MapBaseHelperClass;
 namespace DapperHelpersLibrary.Extensions
 {
@@ -20,24 +20,32 @@ namespace DapperHelpersLibrary.Extensions
         {
             EnumDatabaseCategory dcat = conn.GetCategory(db);
             if (dcat != EnumDatabaseCategory.SQLite)
-                throw new BasicBlankException("Currently, Only SQLite can create tables since the variable types will be all strings");
+            {
+                throw new CustomBasicException("Currently, Only SQLite can create tables since the variable types will be all strings");
+            }
             var thisList = GetMappingList<E>(out string TableName);
             //return "create table TestSong (ID integer primary key autoincrement, Name string, Value integer)";
-            if (thisList.Exists(Items => Items.DatabaseName.ToUpper() == "ID") == false)
-                throw new BasicBlankException("You must have ID in order to create table  Its needed for the primary key part");
+            if (thisList.Exists(xx => xx.DatabaseName.ToUpper() == "ID") == false)
+            {
+                throw new CustomBasicException("You must have ID in order to create table  Its needed for the primary key part");
+            }
             string sqls;
-            StrCat cats = new StrCat();
-            StringBuilder thisStr = new StringBuilder("create table ");
+            StrCat cats = new ();
+            StringBuilder thisStr = new ("create table ");
             thisStr.Append(TableName);
             bool autoIncrementID = IsAutoIncremented<E>();
             if (autoIncrementID == true)
+            {
                 thisStr.Append(" (ID integer primary key autoincrement, ");
+            }
             else
+            {
                 thisStr.Append(" (ID integer primary key, ");
-            thisList.RemoveAllOnly(Items => Items.DatabaseName.ToLower() == "id"); //its okay to remove id because its already handled anyways.
-            thisList.ForEach(Items => cats.AddToString($"{Items.DatabaseName} {Items.GetDataType()}", ", "));
+            }
+            thisList.RemoveAllOnly(xx => xx.DatabaseName.ToLower() == "id"); //its okay to remove id because its already handled anyways.
+            thisList.ForEach(xx => cats.AddToString($"{xx.DatabaseName} {xx.GetDataType()}", ", "));
             thisStr.Append(cats.GetInfo());
-            thisStr.Append(")");
+            thisStr.Append(')');
             sqls = thisStr.ToString();
             db.Execute(sqls);
         }

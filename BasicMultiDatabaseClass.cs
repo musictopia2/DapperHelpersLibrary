@@ -1,6 +1,6 @@
-﻿using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.ConfigProcesses;
-using CommonBasicStandardLibraries.DatabaseHelpers.MiscClasses;
-using CommonBasicStandardLibraries.DatabaseHelpers.MiscInterfaces;
+﻿using CommonBasicLibraries.AdvancedGeneralFunctionsAndProcesses.ConfigProcesses;
+using CommonBasicLibraries.DatabaseHelpers.MiscClasses;
+using CommonBasicLibraries.DatabaseHelpers.MiscInterfaces;
 using System.Threading.Tasks; //most of the time, i will be using asyncs.
 namespace DapperHelpersLibrary
 {

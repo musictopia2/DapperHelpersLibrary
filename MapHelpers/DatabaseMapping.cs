@@ -1,4 +1,4 @@
-﻿using CommonBasicStandardLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
+﻿using CommonBasicLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
 using System.Reflection;
 namespace DapperHelpersLibrary.MapHelpers
 {
@@ -23,7 +23,9 @@ namespace DapperHelpersLibrary.MapHelpers
         public string GetDataType()
         {
             if (IsBoolProperty == true || PropertyDetails.IsIntOrEnum() == true)
+            {
                 return "integer";
+            }
             return "string";
         }
         public DatabaseMapping(string objectName, string databaseName, string tableName, PropertyInfo thisProp)
@@ -33,9 +35,13 @@ namespace DapperHelpersLibrary.MapHelpers
             TableName = tableName;
             PropertyDetails = thisProp;
             if (databaseName == objectName)
+            {
                 HasMatch = true;
+            }
             else
+            {
                 HasMatch = false;
+            }
         }
     }
 }

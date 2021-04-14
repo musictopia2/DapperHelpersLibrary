@@ -1,4 +1,4 @@
-﻿using CommonBasicStandardLibraries.CollectionClasses;
+﻿using CommonBasicLibraries.CollectionClasses;
 using Dapper;
 using DapperHelpersLibrary.MapHelpers;
 using System.Text;
@@ -11,7 +11,7 @@ namespace DapperHelpersLibrary.SQLHelpers
             UseDatabaseMapping,
             Conditional
         }
-        public static void PopulateSimple(CustomBasicList<DatabaseMapping> thisList, DapperSQLData output, EnumCategory category)
+        public static void PopulateSimple(BasicList<DatabaseMapping> thisList, DapperSQLData output, EnumCategory category)
         {
             thisList.ForEach(items =>
             {
@@ -22,20 +22,28 @@ namespace DapperHelpersLibrary.SQLHelpers
                 else
                 {
                     if (items.Like)
+                    {
                         output.Parameters.Add($"@{items.ObjectName}", "%" + items.Value + "%");
+                    }
                     else
+                    {
                         output.Parameters.Add($"@{items.ObjectName}", items.Value);
+                    }
                 }
             });
         }
         public static DynamicParameters GetDynamicIDData(ref StringBuilder builder, int ID, bool isJoined = false)
         {
-            DynamicParameters output = new DynamicParameters();
+            DynamicParameters output = new ();
             output.Add("ID", ID);
             if (isJoined == false)
+            {
                 builder.Append(" where ID = @ID");
+            }
             else
+            {
                 builder.Append(" where a.ID = @ID");
+            }
             return output;
         }
     }
