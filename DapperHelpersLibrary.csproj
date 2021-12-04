@@ -1,9 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-	  <TargetFramework>net6.0</TargetFramework>
+	  <TargetFrameworks>net6.0;netstandard2.0</TargetFrameworks>
 	  <ImplicitUsings>true</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  <LangVersion>latest</LangVersion>
     <PackageTags>dapper crud extensions</PackageTags>
     <Authors>musictopia</Authors>
     <Description>Dapper extensions and connection class.
@@ -13,7 +14,7 @@ Even has many ways to be smart about updating.  Even allows multiple tables incl
     <Version>5.0.1</Version>
   </PropertyGroup>
   <ItemGroup>
-	  <PackageReference Include="CommonBasicLibraries" Version="5.0.1" />
+	  <PackageReference Include="CommonBasicLibraries" Version="5.0.2" />
     <PackageReference Include="Dapper" Version="2.0.123" />
   </ItemGroup>
 </Project>
