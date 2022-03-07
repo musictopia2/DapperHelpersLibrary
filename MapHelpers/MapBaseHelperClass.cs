@@ -67,20 +67,28 @@ internal static class MapBaseHelperClass
         var tempList = thisType.GetProperties().Where(xx => xx.CanMapToDatabase() == true).ToBasicList();
         if (isAutoIncremented == true)
         {
-            var firsts = tempList.First();
-            if (firsts.Name != "ID")
+            var firsts = tempList.Where(x => x.Name == "ID").SingleOrDefault();
+            if (firsts is not null)
             {
-                ColumnAttribute? column = firsts.GetAttribute<ColumnAttribute>();
-                if (column is null)
-                {
-                    throw new CustomBasicException("The column attribute was not found first.  Rethinking is necessary now");
-                }
-                if (column.ColumnName != "ID")
-                {
-                    throw new CustomBasicException("The first column was supposed to have the name of ID.  Rethink");
-                }
+                tempList.RemoveSpecificItem(firsts);
             }
-            tempList.RemoveFirstItem();
+            else
+            {
+                firsts = tempList.First();
+                if (firsts.Name != "ID")
+                {
+                    ColumnAttribute? column = firsts.GetAttribute<ColumnAttribute>();
+                    if (column is null)
+                    {
+                        throw new CustomBasicException("The column attribute was not found first.  Rethinking is necessary now");
+                    }
+                    if (column.ColumnName != "ID")
+                    {
+                        throw new CustomBasicException("The first column was supposed to have the name of ID.  Rethink");
+                    }
+                }
+                tempList.RemoveFirstItem();
+            }
         }
         if (beingJoined == true)
         {
