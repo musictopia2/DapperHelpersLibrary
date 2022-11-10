@@ -17,7 +17,7 @@ global using CommonBasicLibraries.AdvancedGeneralFunctionsAndProcesses.Misc;
 global using static DapperHelpersLibrary.MapHelpers.MapBaseHelperClass;
 global using CommonBasicLibraries.DatabaseHelpers.Extensions;
 global using static DapperHelpersLibrary.SQLHelpers.SimpleStatementHelpers;
-global using cs = CommonBasicLibraries.DatabaseHelpers.ConditionClasses.ConditionOperators;
+global using cs1 = CommonBasicLibraries.DatabaseHelpers.ConditionClasses.ConditionOperators;
 global using CommonBasicLibraries.DatabaseHelpers.Attributes;
 global using static DapperHelpersLibrary.Extensions.DeleteSimple;
 global using static DapperHelpersLibrary.SQLHelpers.PopulateDynamics;

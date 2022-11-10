@@ -20,21 +20,48 @@ public class ConnectionHelper : ISqliteManuelDataAccess, ISqlServerManuelDataAcc
         }
         GetConnector = GlobalClass.SQLiteConnector;
     }
+    public ConnectionHelper(EnumDatabaseCategory category)
+    {
+        if (_isTesting)
+        {
+            throw new CustomBasicException("You already decided to test this");
+        }
+        Category = category;
+        GetConnector = PrivateConnector();
+    }
+    public async Task InitAsync(string key, ISimpleConfig config)
+    {
+        if (_isTesting)
+        {
+            throw new CustomBasicException("You already decided to test this");
+        }
+        _connectionString = await config.GetStringAsync(key);
+    }
     private readonly bool _isTesting;
     private static string GetInMemorySQLiteString()
     {
         return "Data Source=:memory:";
     }
     public IDbConnector GetConnector { get; private set; }
-    public ConnectionHelper(EnumDatabaseCategory category, string key, ISimpleConfig config)
-    {
-        if (_isTesting == true)
-        {
-            throw new CustomBasicException("You already decided to test this");
-        }
-        SetUpStandard(category, key, config);
-        GetConnector = PrivateConnector();
-    }
+    //private bool _processing;
+    //public ConnectionHelper(EnumDatabaseCategory category, string key, ISimpleConfig config)
+    //{
+    //    if (_isTesting == true)
+    //    {
+    //        throw new CustomBasicException("You already decided to test this");
+    //    }
+    //    _processing = true;
+    //    SetUpStandard(category, key, config);
+    //    do
+    //    {
+    //        if (_processing == false)
+    //        {
+    //            break;
+    //        }
+    //        Thread.Sleep(10);
+    //    } while (true);
+    //    GetConnector = PrivateConnector();
+    //}
     private IDbConnector PrivateConnector()
     {
         if (Category == EnumDatabaseCategory.SQLServer)
@@ -63,26 +90,37 @@ public class ConnectionHelper : ISqliteManuelDataAccess, ISqlServerManuelDataAcc
         }
         throw new CustomBasicException("The data connector currently is unknown.  May require rethinking");
     }
-    public ConnectionHelper(ISimpleConfig config, Func<EnumDatabaseCategory, string> key, Func<Task<EnumDatabaseCategory>> functs)
-    {
-        if (_isTesting == true)
-        {
-            throw new CustomBasicException("You already decided to test this");
-        }
-        SetUpStandard(config, key, functs);
-        GetConnector = PrivateConnector();
-    }
-    private async void SetUpStandard(ISimpleConfig config, Func<EnumDatabaseCategory, string> key, Func<Task<EnumDatabaseCategory>> functs)
-    {
-        Category = await functs(); //the category first.  that will determine the key as well.
-        string temps = key(Category);
-        _connectionString = await config.GetStringAsync(temps);
-    }
-    private async void SetUpStandard(EnumDatabaseCategory category, string key, ISimpleConfig config)
-    {
-        _connectionString = await config.GetStringAsync(key);
-        Category = category;
-    }
+    //public ConnectionHelper(ISimpleConfig config, Func<EnumDatabaseCategory, string> key, Func<Task<EnumDatabaseCategory>> functs)
+    //{
+    //    if (_isTesting == true)
+    //    {
+    //        throw new CustomBasicException("You already decided to test this");
+    //    }
+    //    _processing = true;
+    //    SetUpStandard(config, key, functs);
+    //    do
+    //    {
+    //        if (_processing == false)
+    //        {
+    //            break;
+    //        }
+    //        Thread.Sleep(10);
+    //    } while (true);
+    //    GetConnector = PrivateConnector();
+    //}
+    //private async void SetUpStandard(ISimpleConfig config, Func<EnumDatabaseCategory, string> key, Func<Task<EnumDatabaseCategory>> functs)
+    //{
+    //    Category = await functs(); //the category first.  that will determine the key as well.
+    //    string temps = key(Category);
+    //    _connectionString = await config.GetStringAsync(temps);
+    //    _processing = false;
+    //}
+    //private async void SetUpStandard(EnumDatabaseCategory category, string key, ISimpleConfig config)
+    //{
+    //    _connectionString = await config.GetStringAsync(key);
+    //    Category = category;
+    //    _processing = false;
+    //}
     public ConnectionHelper(EnumDatabaseCategory category, string pathOrDatabaseName)
     {
         if (_isTesting == true)

@@ -211,13 +211,13 @@ internal static class StatementSelectFactoryJoin
         andList.ForEach(items =>
         {
             DatabaseMapping thisMap = FindMappingForProperty(items, mapList);
-            if (items.Operator == cs.IsNotNull || items.Operator == cs.IsNull)
+            if (items.Operator == cs1.IsNotNull || items.Operator == cs1.IsNull)
             {
                 cats.AddToString($"{thisMap.Prefix}.{thisMap.DatabaseName} {items.Operator}", seperator); //i am guessing that with parameters no need to worry about the null parts
             }
             else
             {
-                if (items.Operator == cs.Like)
+                if (items.Operator == cs1.Like)
                 {
                     thisMap.Like = true;
                 }

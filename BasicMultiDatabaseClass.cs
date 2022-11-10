@@ -19,7 +19,9 @@ public abstract class BasicMultiDatabaseClass
             return;
         }
         var cat = await GetDatabaseCategoryAsync();
-        Helps = new(cat, CalculateKey(cat), Config);
+        Helps = new(cat);
+        await Helps.InitAsync(CalculateKey(cat), Config);
+        //Helps = new(cat, CalculateKey(cat), Config);
         //Helps = new ConnectionHelper(Config, CalculateKey, cat);
         Connector = Helps.GetConnector;
     }
