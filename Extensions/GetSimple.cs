@@ -191,9 +191,10 @@ public static class GetSimple
         where D1 : class
         where D2 : class
     {
-        if (detail1 == null)
+        //there is the possibility that one contains nulls but the other does not.  does mean whoever uses it has to plan for it.
+        if (detail1 == null && detail2 is null)
         {
-            action?.Invoke(main, detail1!, detail2);
+            action?.Invoke(main, detail1!, detail2!);
             return main;
         }
         bool had = false;
@@ -203,10 +204,10 @@ public static class GetSimple
             thisDict.Add(main.ID, thisTemp);
             had = true;
         }
-        thisTemp.AddRelationships(detail1, detail2);
+        thisTemp.AddRelationships(detail1!, detail2);
         if (action != null && had == true)
         {
-            action.Invoke(main, detail1, detail2);
+            action.Invoke(main, detail1!, detail2);
         }
         return thisTemp;
     }
