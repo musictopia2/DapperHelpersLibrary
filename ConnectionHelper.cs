@@ -473,7 +473,7 @@ public class ConnectionHelper : ISqliteManuelDataAccess, ISqlServerManuelDataAcc
         using IDbConnection cons = GetConnection();
         return cons.GetSingleObject<E, R>(property, sortList, GetConnector, conditions);
     }
-    public async Task<R> GetSingleObjectAsync<E, R>(string property, BasicList<SortInfo> sortList, BasicList<ICondition>? conditions = null) where E : class, ISimpleDapperEntity
+    public async Task<R?> GetSingleObjectAsync<E, R>(string property, BasicList<SortInfo> sortList, BasicList<ICondition>? conditions = null) where E : class, ISimpleDapperEntity
     {
         using IDbConnection cons = GetConnection();
         return await cons.GetSingleObjectAsync<E, R>(property, sortList, GetConnector, conditions);

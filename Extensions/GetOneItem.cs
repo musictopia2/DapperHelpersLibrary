@@ -12,9 +12,9 @@ public static class GetOneItem
         {
             PopulateSimple(ParameterMappings, thisData, EnumCategory.Conditional);
         }
-        return db.ExecuteScalar<R>(thisData.SQLStatement, thisData.Parameters, thisTran, connectionTimeOut);
+        return db.ExecuteScalar<R>(thisData.SQLStatement, thisData.Parameters, thisTran, connectionTimeOut)!;
     }
-    public static async Task<R> GetSingleObjectAsync<E, R>(this IDbConnection db, string property, BasicList<SortInfo> sortList, IDbConnector conn, BasicList<ICondition>? conditions = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
+    public static async Task<R?> GetSingleObjectAsync<E, R>(this IDbConnection db, string property, BasicList<SortInfo> sortList, IDbConnector conn, BasicList<ICondition>? conditions = null, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
     {
         BasicList<DatabaseMapping> thisList = GetMappingList<E>(out string TableName);
         EnumDatabaseCategory database = db.GetDatabaseCategory(conn);
@@ -25,7 +25,7 @@ public static class GetOneItem
         {
             PopulateSimple(ParameterMappings, thisData, EnumCategory.Conditional);
         }
-        return await db.ExecuteScalarAsync<R>(thisData.SQLStatement, thisData.Parameters, thisTran, connectionTimeOut);
+        return await db.ExecuteScalarAsync<R>(thisData.SQLStatement!, thisData.Parameters!, thisTran!, connectionTimeOut);
     }
     public static BasicList<R> GetObjectList<E, R>(this IDbConnection db, string property, IDbConnector conn, BasicList<ICondition>? conditions = null, BasicList<SortInfo>? sortList = null, int howMany = 0, IDbTransaction? thisTran = null, int? connectionTimeOut = null) where E : class
     {
