@@ -11,10 +11,10 @@
 Allows advanced searching and sorting and crud functions.
 Maps to tables and columns via attributes.
 Even has many ways to be smart about updating.  Even allows multiple tables include one to many joins with up to 3 tables.</Description>
-    <Version>8.0.1</Version>
+    <Version>8.0.2</Version>
   </PropertyGroup>
   <ItemGroup>
-	  <PackageReference Include="CommonBasicLibraries" Version="8.0.1" />
-    <PackageReference Include="Dapper" Version="2.1.21" />
+	  <PackageReference Include="CommonBasicLibraries" Version="8.0.5" />
+    <PackageReference Include="Dapper" Version="2.1.28" />
   </ItemGroup>
 </Project>

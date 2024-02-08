@@ -1,5 +1,4 @@
-﻿global using CommonBasicLibraries.AdvancedGeneralFunctionsAndProcesses.ConfigProcesses;
-global using CommonBasicLibraries.DatabaseHelpers.MiscClasses;
+﻿global using CommonBasicLibraries.DatabaseHelpers.MiscClasses;
 global using CommonBasicLibraries.DatabaseHelpers.MiscInterfaces;
 global using CommonBasicLibraries.AdvancedGeneralFunctionsAndProcesses.BasicExtensions;
 global using CommonBasicLibraries.BasicDataSettingsAndProcesses;
@@ -26,3 +25,5 @@ global using static DapperHelpersLibrary.SQLHelpers.StatementFactoryConditionsSi
 global using static CommonBasicLibraries.DatabaseHelpers.Extensions.ReflectionDatabase;
 global using static DapperHelpersLibrary.Extensions.GetSimple;
 global using static DapperHelpersLibrary.SQLHelpers.StatementSelectFactoryJoin;
+global using Microsoft.Extensions.Configuration;
+global using ff1 = CommonBasicLibraries.AdvancedGeneralFunctionsAndProcesses.FileFunctions.FileFunctions;
