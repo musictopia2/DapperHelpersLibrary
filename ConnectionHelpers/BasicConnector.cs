@@ -45,6 +45,10 @@ public class BasicConnector : IConnector
         Init(category, key, "");
         GetConnector = this.PrivateConnector();
     }
+    public IDbConnection GetConnection() //sometimes you need this for the basic connector.
+    {
+        return ConnectionExtensions.GetConnection(this);
+    }
     private void Init(EnumDatabaseCategory category, string key, string proposedPath)
     {
         if (Configuration is null)
